@@ -1,0 +1,83 @@
+# =============================================================================
+# SWA connectivity probe — Namespace + ServiceAccount + Deployment
+# Rendered from ansible/roles/swa_workloads (source of truth for values).
+#
+# The pod mounts the node's SWA Agent socket DIRECTORY (not the socket file)
+# via hostPath — the agent may recreate the socket inode on restart, and a
+# directory mount survives that.
+#
+# SWA workload attestation on Kubernetes keys off namespace + service account,
+# so the SPIFFE ID your workload receives looks like:
+#   spiffe://<trust-domain>/k8s-nodegroup/ns/swa-probe/sa/swa-probe
+# Register that SPIFFE ID (as the JWT `sub`) with your Secrets Manager JWT
+# authenticator (see terraform_code/05_cyberark_config/secrets_manager_swa/).
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ swa_probe_namespace }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: swa-probe
+  namespace: {{ swa_probe_namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swa-probe
+  namespace: {{ swa_probe_namespace }}
+  labels:
+    app: swa-probe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swa-probe
+  template:
+    metadata:
+      labels:
+        app: swa-probe
+    spec:
+      serviceAccountName: swa-probe
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: swa-probe
+          image: {{ swa_probe_image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SWA_SOCKET_PATH
+              value: {{ swa_socket_path }}
+            - name: SWA_AUDIENCE
+              value: {{ swa_audience }}
+            - name: SWA_WAIT_TIMEOUT
+              value: "{{ swa_wait_timeout }}"
+            - name: SWA_PRINT_TOKEN
+              value: "false"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: swa-agent-socket
+              mountPath: {{ swa_socket_dir }}
+              readOnly: true
+      volumes:
+        - name: swa-agent-socket
+          hostPath:
+            path: {{ swa_socket_dir }}
+            type: Directory

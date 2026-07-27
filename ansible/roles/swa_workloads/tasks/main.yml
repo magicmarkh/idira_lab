@@ -1,0 +1,27 @@
+---
+# Deploy the SWA layer onto an existing KinD cluster.
+# Order: agent (Gap A) -> build+load images (Gap B) -> deploy+verify probe (Gap C).
+
+- name: Assert required SWA agent inputs are present
+  ansible.builtin.assert:
+    that:
+      - swa_agent_helm_repo_url | length > 0
+      - swa_agent_chart | length > 0
+      - swa_agent_chart_version | length > 0
+      - swa_agent_enrollment_token | length > 0
+    fail_msg: >-
+      SWA agent inputs missing. Supply swa_agent_helm_repo_url, swa_agent_chart,
+      swa_agent_chart_version and swa_agent_enrollment_token (from your SWA
+      tenant), e.g. via `-e` extra-vars or group_vars. Set swa_agent_enabled=false
+      to skip the agent install if it is already present.
+  when: swa_agent_enabled | bool
+
+- name: Install SWA agent DaemonSet (Gap A)
+  ansible.builtin.import_tasks: agent.yml
+  when: swa_agent_enabled | bool
+
+- name: Build and load workload images (Gap B)
+  ansible.builtin.import_tasks: build.yml
+
+- name: Deploy and verify swa-probe (Gap C)
+  ansible.builtin.import_tasks: deploy.yml

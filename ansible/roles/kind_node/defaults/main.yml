@@ -1,0 +1,9 @@
+---
+# kind_node role defaults.
+#
+# Tool versions are PINNED for reproducibility and to avoid GitHub API
+# rate-limit flakiness. Leave any value empty ("") to fall back to the live
+# "latest" lookup for that tool.
+kind_kubectl_version: "v1.30.2"   # empty => dl.k8s.io/release/stable.txt
+kind_kind_version: "v0.23.0"      # empty => latest GitHub release
+kind_helm_version: ""             # empty => get-helm-3 default (latest)

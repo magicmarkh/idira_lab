@@ -1,0 +1,15 @@
+# The SPIFFE-identified workload (the swa-probe / fetch-secret pod).
+# Its Conjur host id IS the SPIFFE ID; the annotation maps the JWT `sub` claim
+# to this host under the secureWorkloadAccess authenticator.
+#
+# Load under branch `data`:
+#   conjur policy load -b data -f swa-workload-host.yml
+#
+# @SPIFFE_ID@ is substituted by apply_swa_policy.sh from $SWA_SPIFFE_ID.
+- !policy
+  id: spiffe-apps
+  body:
+    - !host
+      id: @SPIFFE_ID@
+      annotations:
+        authn-jwt/secureWorkloadAccess/sub: @SPIFFE_ID@

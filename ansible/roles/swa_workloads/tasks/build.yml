@@ -1,0 +1,56 @@
+---
+# Gap B - get the Go source onto the node, generate go.sum, build the two
+# images and load them into the kind cluster. Runs on the node, which has NAT
+# egress for pulling Go modules and base images. No registry required.
+
+- name: Ensure destination dir exists
+  ansible.builtin.file:
+    path: "{{ swa_k8s_dst }}"
+    state: directory
+    owner: "{{ swa_kube_user }}"
+    group: "{{ swa_kube_user }}"
+    mode: "0755"
+
+# Copy each app dir verbatim (main.go, go.mod, Dockerfile). go.sum is generated
+# on the node below; stale non-build files (app.py, *NOTES.md, README.md) are
+# harmless in the build context and are being removed from the repo separately.
+- name: Copy app source to the node
+  ansible.builtin.copy:
+    src: "{{ swa_k8s_src_local }}/{{ item }}/"
+    dest: "{{ swa_k8s_dst }}/{{ item }}/"
+    owner: "{{ swa_kube_user }}"
+    group: "{{ swa_kube_user }}"
+    mode: "0644"
+  loop:
+    - swa_probe
+    - fetch_secret
+
+# Generate go.sum using the SAME builder image the Dockerfiles use, so the
+# toolchain matches. `creates:` makes this idempotent.
+- name: Generate go.sum (go mod tidy in the pinned builder)
+  ansible.builtin.command:
+    cmd: >-
+      docker run --rm
+      -v {{ swa_k8s_dst }}/{{ item }}:/src -w /src
+      {{ swa_go_builder_image }} sh -c "go mod tidy"
+    creates: "{{ swa_k8s_dst }}/{{ item }}/go.sum"
+  loop:
+    - swa_probe
+    - fetch_secret
+
+- name: Build images
+  ansible.builtin.command:
+    cmd: "docker build -t {{ item.tag }} {{ swa_k8s_dst }}/{{ item.dir }}"
+  loop:
+    - { dir: swa_probe, tag: "{{ swa_probe_image }}" }
+    - { dir: fetch_secret, tag: "{{ fetch_secret_image }}" }
+  # docker build is not reliably idempotent to detect from output; treat as changed.
+  changed_when: true
+
+- name: Load images into kind
+  ansible.builtin.command: >-
+    kind load docker-image {{ item }} --name {{ swa_kind_cluster_name }}
+  loop:
+    - "{{ swa_probe_image }}"
+    - "{{ fetch_secret_image }}"
+  changed_when: true

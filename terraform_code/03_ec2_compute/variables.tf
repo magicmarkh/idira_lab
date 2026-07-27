@@ -1,0 +1,312 @@
+variable "asset_owner_name" {
+  description = "Name of the human that the cloud team can contact with questions"
+  type        = string
+}
+
+variable "region" {
+  description = "AWS cloud region for the deployment"
+  default     = "us-east-2"
+  type        = string
+}
+
+variable "team_name" {
+  description = "cloud naming identifier"
+  default     = "us-ent-east"
+  type        = string
+}
+
+variable "amzn_linux_ami_id" {
+  description = "ami id for amazon linux ec2 - defaults to latest Amazon Linux 2023"
+  type        = string
+  default     = null
+}
+
+variable "amzn_windows_server_ami_id" {
+  description = "ami id for amazon windows ec2 - defaults to latest Windows Server 2022"
+  type        = string
+  default     = null
+}
+
+variable "iScheduler" {
+  description = "use if the system should be shutdown nightly"
+  type        = string
+  default     = "US_E_office"
+}
+
+variable "dc1_private_ip" {
+  description = "private ip of dc1"
+  type        = string
+}
+
+variable "linux_target_1_private_ip" {
+  description = "private ip of linux target 1"
+  type        = string
+}
+
+variable "windows_target_1_private_ip" {
+  description = "private ip of windows target 1"
+  type        = string
+}
+
+variable "connector_1_private_ip" {
+  description = "private ip of connector 1"
+  type        = string
+}
+
+variable "windows_connector_hostname" {
+  description = "Hostname for the Windows connector instance"
+  type        = string
+  default     = "us-ent-east-connector-1"
+}
+
+variable "sia_aws_connector_1_private_ip" {
+  description = "private ip of sia aws connector 1"
+  type        = string
+}
+
+variable "sia_aws_connector_2_private_ip" {
+  description = "private ip of sia aws connector 2 (deprecated - use linux_connector_count instead)"
+  type        = string
+  default     = ""
+}
+
+variable "linux_connector_count" {
+  description = "Number of Linux SIA connectors to deploy"
+  type        = number
+  default     = 1
+}
+
+variable "linux_connector_hostname_prefix" {
+  description = "Hostname prefix for Linux connectors (will append -1, -2, -3, etc.)"
+  type        = string
+  default     = "us-ent-east-sia-aws-connector"
+}
+
+variable "linux_connector_name_prefix" {
+  description = "Name tag prefix for Linux connectors"
+  type        = string
+  default     = "linux-sia-connector"
+}
+
+variable "connector_pool_name" {
+  description = "Name of the connector pool you're adding the connector to"
+  type        = string
+}
+
+variable "identity_tenant_id" {
+  description = "your cyberark tenant id. Example: 'https://abc123.id.cyberark.cloud' woud be abc123"
+  type        = string
+}
+
+variable "platform_tenant_name" {
+  description = "name of your cyberark tenant. Example: 'https://acme.cyberark.cloud' would be acme"
+  type        = string
+}
+
+variable "workspace_type" {
+  description = "CSP identifier. AWS, Azure, or GCP"
+  type        = string
+  default     = "AWS"
+}
+
+variable "linux_target_1_hostname" {
+  description = "name of the target demo system for linux"
+  type        = string
+}
+
+# ===========================
+# Conjur Variables
+# ===========================
+variable "conjur_appliance_url" {
+  description = "URL of the Conjur appliance"
+  type        = string
+  default     = "https://murphyslab.secretsmgr.cyberark.cloud/api"
+}
+
+variable "conjur_account" {
+  description = "Conjur account name"
+  type        = string
+  default     = "conjur"
+}
+
+variable "conjur_login" {
+  description = "Conjur login name"
+  type        = string
+  default     = "host/data/murphys-tf"
+}
+
+variable "conjur_api_key" {
+  description = "Conjur API key for the specified login"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "conjur_identity_client_id_path" {
+  description = "Conjur secret path for Identity client ID"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_identity_client_secret_path" {
+  description = "Conjur secret path for Identity client secret"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_domain_join_username_path" {
+  description = "Conjur secret path for domain join username"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_domain_join_password_path" {
+  description = "Conjur secret path for domain join password"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_identity_username_path" {
+  description = "Conjur secret path for identity username"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_identity_password_path" {
+  description = "Conjur secret path for identity password"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_aws_access_key_path" {
+  description = "Conjur secret path for AWS Access Key ID"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_aws_secret_key_path" {
+  description = "Conjur secret path for AWS Secret Access Key"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_aws_pem_key_path" {
+  description = "Conjur secret path for AWS PEM key for SSH access"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_authn_type" {
+  description = "Conjur auth method: 'api' for API key (laptop), 'iam' for AWS IAM (EC2)"
+  type        = string
+  default     = "api"
+  validation {
+    condition     = contains(["api", "iam"], var.conjur_authn_type)
+    error_message = "conjur_authn_type must be 'api' or 'iam'."
+  }
+}
+
+variable "conjur_service_id" {
+  description = "Conjur authn-iam service ID (required when conjur_authn_type = 'iam')"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_host_id" {
+  description = "Conjur host identity for IAM auth (required when conjur_authn_type = 'iam')"
+  type        = string
+  default     = ""
+}
+
+# ===========================
+# Remote State Variables
+# ===========================
+variable "state_bucket" {
+  description = "S3 bucket name for Terraform remote state"
+  type        = string
+  default     = "my-terraform-state-bucket"
+}
+
+variable "foundation_state_key" {
+  description = "S3 key for foundation Terraform state"
+  type        = string
+  default     = "terraform/foundation.tfstate"
+}
+
+variable "security_state_key" {
+  description = "S3 key for security Terraform state"
+  type        = string
+  default     = "terraform/security.tfstate"
+}
+
+variable "cyberark_connector_pools_state_key" {
+  description = "S3 key for CyberArk connector pools Terraform state"
+  type        = string
+  default     = "terraform/cyberark_connector_pools.tfstate"
+}
+
+variable "state_region" {
+  description = "AWS region for Terraform state bucket"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "domain_name" {
+  description = "domain to join the Windows connector to"
+  type        = string
+  default     = ""
+}
+
+# ===========================
+# Kind Kubernetes Node
+# ===========================
+variable "kind_node_private_ip" {
+  description = "private ip of the Kind Kubernetes node"
+  type        = string
+}
+
+variable "kind_node_hostname" {
+  description = "Hostname for the Kind Kubernetes node instance"
+  type        = string
+  default     = "us-ent-east-kind-1"
+}
+
+# ===========================
+# SWA (Secure Workload Access) layer
+# ===========================
+variable "enable_swa_workloads" {
+  description = "Deploy the SWA agent + swa-probe/fetch-secret onto the kind node after the cluster is up"
+  type        = bool
+  default     = false
+}
+
+variable "swa_agent_helm_repo_url" {
+  description = "Helm chart repository URL for the SWA agent (from your SWA tenant)"
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_chart" {
+  description = "SWA agent Helm chart reference, e.g. cyberark-swa/swa-agent"
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_chart_version" {
+  description = "Pinned SWA agent Helm chart version"
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_enrollment_token_path" {
+  description = "Conjur secret path holding the SWA agent enrollment token (preferred over passing the token directly)"
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_enrollment_token" {
+  description = "SWA agent enrollment token passed directly (used only when swa_agent_enrollment_token_path is empty)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

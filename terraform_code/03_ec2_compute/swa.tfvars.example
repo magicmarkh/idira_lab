@@ -1,0 +1,28 @@
+# =============================================================================
+# SWA (Secure Workload Access) layer — example variable fragment
+#
+# This is NOT a full stage tfvars. Append these lines to your real
+# 03_ec2_compute terraform.tfvars to enable the SWA layer, which (after the
+# kind cluster is up) installs the SWA agent, builds + loads the swa-probe /
+# fetch-secret images, and deploys + verifies the probe.
+#
+# Leave enable_swa_workloads = false (the default) to skip all of this — a plain
+# 03_ec2_compute apply is unaffected.
+#
+# Prereqs: you need the SWA agent Helm chart coordinates and an enrollment token
+# from your SWA / Secrets Manager tenant. Also apply the Secrets Manager side:
+#   terraform_code/05_cyberark_config/secrets_manager_swa/apply_swa_policy.sh
+# =============================================================================
+
+enable_swa_workloads    = true
+swa_agent_helm_repo_url = "https://<your-swa-tenant-chart-repo>"
+swa_agent_chart         = "cyberark-swa/swa-agent"
+swa_agent_chart_version = "0.0.0" # pin an explicit chart version
+
+# Preferred: source the enrollment token from Conjur (kept out of plaintext tfvars).
+swa_agent_enrollment_token_path = "data/vault/m-priv-svc-accts/swa/enrollment_token"
+
+# Alternative: pass the token directly. Only used when *_path above is empty.
+# Do NOT commit a real token — tfvars are pushed to S3 unsanitized except the
+# conjur_* fields. Prefer the _path option above.
+# swa_agent_enrollment_token = "<token-from-swa-tenant>"

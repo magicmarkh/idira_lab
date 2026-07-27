@@ -1,0 +1,66 @@
+---
+# =============================================================================
+# swa_workloads role defaults
+#
+# Deploys the CyberArk Secure Workload Access (SWA) layer onto an existing
+# single-node KinD cluster (built by the `kind_node` role):
+#   Gap A - install the SWA agent DaemonSet (Helm)
+#   Gap B - build the swa-probe / fetch-secret images and load them into kind
+#   Gap C - deploy swa-probe and verify it obtains a JWT-SVID
+#
+# The fetch-secret Job is TEMPLATED here but applied by the demo scripts
+# (scripts/demo/swa/) so it stays presenter-driven and re-runnable.
+# =============================================================================
+
+# ---- Node / cluster ---------------------------------------------------------
+# `kind create cluster` (no --name) => cluster "kind", node "kind-control-plane".
+swa_kind_cluster_name: kind
+swa_kind_node_container: "{{ swa_kind_cluster_name }}-control-plane"
+swa_kube_user: ec2-user
+# Where the k8s Go source is copied FROM (on the control host) and TO (on the node).
+swa_k8s_src_local: "{{ playbook_dir }}/../../terraform_code/03_ec2_compute/ec2_instances/kind_node/k8s"
+swa_k8s_dst: "/home/{{ swa_kube_user }}/swa"
+
+# ---- Gap A: SWA agent (OPERATOR-SUPPLIED — no sane default can be invented) --
+# These come from YOUR SWA / Secrets Manager tenant. The role asserts they are
+# set before doing anything. Chart-specific key names (enrollment token flag,
+# DaemonSet name, socket path) are overridable via swa_agent_extra_values.
+swa_agent_enabled: true
+swa_agent_helm_repo_name: cyberark-swa
+swa_agent_helm_repo_url: ""       # REQUIRED - tenant Helm chart repo URL
+swa_agent_chart: ""               # REQUIRED - e.g. cyberark-swa/swa-agent
+swa_agent_chart_version: ""       # REQUIRED - pin an explicit version
+swa_agent_release_name: swa-agent
+# The SWA agent must run in the SAME namespace as the demo workloads (swa-probe),
+# not a separate swa-system namespace, for attestation/socket sharing here.
+swa_agent_namespace: "{{ swa_probe_namespace }}"
+swa_agent_enrollment_token: ""    # REQUIRED (sensitive) - from SWA tenant
+swa_agent_token_set_key: enrollmentToken   # Helm value key for the token
+swa_agent_extra_values: {}        # free-form map -> extra --set k=v pairs
+swa_agent_rollout_timeout: 180s
+
+# ---- Gap B: images ----------------------------------------------------------
+swa_probe_image: "swa-probe:0.1.0"
+fetch_secret_image: "fetch-secret:0.1.0"
+# Must match the FROM in the app Dockerfiles so go.sum is generated with the
+# same toolchain that later builds the binary.
+swa_go_builder_image: "golang:1.22-alpine"
+
+# ---- Gap C: probe verification ----------------------------------------------
+swa_probe_namespace: swa-probe
+swa_probe_ready_timeout: 120s
+swa_probe_success_marker: "SUCCESS: fetched a JWT-SVID"
+swa_probe_log_retries: 30
+swa_probe_log_delay: 5
+
+# ---- Agent socket (confirmed for this environment) --------------------------
+swa_socket_path: /tmp/swa-agent/public/api.sock
+swa_socket_dir: /tmp/swa-agent
+swa_audience: conjur
+
+# ---- fetch-secret tenant params (parameterize the previously-hardcoded YAML) -
+swa_sm_subdomain: murphyslab
+swa_sm_jwt_service_id: secureWorkloadAccess
+swa_sm_password_var: "data/vault/m-priv-svc-accts/svc_sca_api/password"
+swa_sm_username_var: "data/vault/m-priv-svc-accts/svc_sca_api/username"
+swa_wait_timeout: 30s

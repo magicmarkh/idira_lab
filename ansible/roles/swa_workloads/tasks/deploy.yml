@@ -1,0 +1,53 @@
+---
+# Gap C - render + apply the swa-probe Deployment, wait for it to be Ready, and
+# poll its logs until it reports a successfully fetched JWT-SVID. This is the
+# role's success gate: it proves attestation + agent wiring BEFORE Secrets
+# Manager is involved.
+#
+# The fetch-secret Job manifest is rendered here too, but applying/running it is
+# left to the demo scripts so it stays presenter-driven and re-runnable.
+
+- name: Render swa-probe manifest
+  ansible.builtin.template:
+    src: swa-probe.k8s.yaml.j2
+    dest: "{{ swa_k8s_dst }}/swa-probe.rendered.yaml"
+    owner: "{{ swa_kube_user }}"
+    group: "{{ swa_kube_user }}"
+    mode: "0644"
+
+- name: Render fetch-secret job manifest (applied later by demo scripts)
+  ansible.builtin.template:
+    src: fetch-secret-job.yaml.j2
+    dest: "{{ swa_k8s_dst }}/fetch-secret-job.rendered.yaml"
+    owner: "{{ swa_kube_user }}"
+    group: "{{ swa_kube_user }}"
+    mode: "0644"
+
+- name: Apply swa-probe
+  ansible.builtin.command: kubectl apply -f {{ swa_k8s_dst }}/swa-probe.rendered.yaml
+  register: swa_probe_apply
+  changed_when: >-
+    'configured' in swa_probe_apply.stdout or 'created' in swa_probe_apply.stdout
+
+- name: Wait for swa-probe pod Ready
+  ansible.builtin.command: >-
+    kubectl -n {{ swa_probe_namespace }} wait --for=condition=Ready
+    pod -l app=swa-probe --timeout={{ swa_probe_ready_timeout }}
+  changed_when: false
+
+# Probe writes its result via log lines; kubectl logs merges stdout+stderr.
+- name: Poll probe logs for success marker
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    kubectl -n {{ swa_probe_namespace }} logs deploy/swa-probe --tail=50 2>&1
+  args:
+    executable: /bin/bash
+  register: swa_probe_logs
+  retries: "{{ swa_probe_log_retries }}"
+  delay: "{{ swa_probe_log_delay }}"
+  until: swa_probe_success_marker in swa_probe_logs.stdout
+  changed_when: false
+
+- name: Show probe result
+  ansible.builtin.debug:
+    var: swa_probe_logs.stdout_lines

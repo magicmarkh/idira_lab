@@ -1,0 +1,24 @@
+---
+# Playbook to deploy the CyberArk Secure Workload Access (SWA) layer onto a
+# KinD node that has already been provisioned by setup_kind_node.yml.
+#
+# Installs the SWA agent DaemonSet, builds + loads the swa-probe / fetch-secret
+# images, deploys swa-probe, and verifies it obtains a JWT-SVID.
+#
+# Usage:
+#   ansible-playbook -i '<kind-node-ip>,' \
+#     -e 'ansible_user=ec2-user' \
+#     -e 'swa_agent_helm_repo_url=https://<tenant-chart-repo>' \
+#     -e 'swa_agent_chart=cyberark-swa/swa-agent' \
+#     -e 'swa_agent_chart_version=<x.y.z>' \
+#     -e 'swa_agent_enrollment_token=<token-from-swa-tenant>' \
+#     --private-key=/path/to/us-ent-east-key.pem \
+#     playbooks/setup_swa_workloads.yml
+
+- name: Deploy SWA agent and workloads on the kind node
+  hosts: all
+  become: no
+  gather_facts: yes
+
+  roles:
+    - swa_workloads

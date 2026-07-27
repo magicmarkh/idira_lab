@@ -1,0 +1,57 @@
+---
+# Gap A - install the SWA agent DaemonSet via Helm and confirm the Workload API
+# socket appears on the node. All chart coordinates are operator-supplied; the
+# enrollment token is masked with no_log.
+
+- name: Add SWA Helm repo
+  ansible.builtin.command:
+    argv:
+      - helm
+      - repo
+      - add
+      - "{{ swa_agent_helm_repo_name }}"
+      - "{{ swa_agent_helm_repo_url }}"
+  register: swa_repo_add
+  changed_when: "'has been added' in swa_repo_add.stdout"
+  failed_when:
+    - swa_repo_add.rc != 0
+    - "'already exists' not in swa_repo_add.stderr"
+
+- name: Update Helm repos
+  ansible.builtin.command: helm repo update
+  changed_when: false
+
+# helm upgrade --install is idempotent. --wait blocks until resources are ready.
+- name: Install / upgrade SWA agent DaemonSet
+  ansible.builtin.command: >-
+    helm upgrade --install {{ swa_agent_release_name }} {{ swa_agent_chart }}
+    --version {{ swa_agent_chart_version }}
+    --namespace {{ swa_agent_namespace }} --create-namespace
+    --set {{ swa_agent_token_set_key }}={{ swa_agent_enrollment_token }}
+    {% for k, v in swa_agent_extra_values.items() %}--set {{ k }}={{ v }} {% endfor %}
+    --wait --timeout 5m
+  no_log: true
+  register: swa_helm
+  changed_when: >-
+    'has been upgraded' in swa_helm.stdout or 'has been installed' in swa_helm.stdout
+
+- name: Wait for SWA agent DaemonSet rollout
+  ansible.builtin.command: >-
+    kubectl -n {{ swa_agent_namespace }} rollout status
+    ds/{{ swa_agent_release_name }} --timeout={{ swa_agent_rollout_timeout }}
+  changed_when: false
+
+# The pod writes its Workload API socket to a "public" subdir on the node's
+# hostPath. Confirm it exists before we deploy any workload that mounts it.
+- name: Verify SWA agent socket exists on the node
+  ansible.builtin.command: >-
+    docker exec {{ swa_kind_node_container }} ls -l {{ swa_socket_path }}
+  register: swa_socket_check
+  retries: 12
+  delay: 5
+  until: swa_socket_check.rc == 0
+  changed_when: false
+
+- name: Show SWA agent socket
+  ansible.builtin.debug:
+    var: swa_socket_check.stdout

@@ -1,0 +1,24 @@
+# Let the workload authenticate to the SWA JWT authenticator, and grant it
+# read/execute on the demo secret variables. Load at root:
+#   conjur policy load -b root -f grant-read.yml
+#
+# Placeholders substituted by apply_swa_policy.sh:
+#   @SPIFFE_ID@   -> $SWA_SPIFFE_ID
+#   @PASSWORD_VAR@ -> $SWA_PASSWORD_VAR
+#   @USERNAME_VAR@ -> $SWA_USERNAME_VAR
+
+# Add the workload to the authenticator's "authenticatable" group
+- !grant
+  role: !group conjur/authn-jwt/secureWorkloadAccess/authenticatable
+  member: !host data/spiffe-apps/@SPIFFE_ID@
+
+# Grant read/execute on the secret(s) the workload fetches
+- !permit
+  role: !host data/spiffe-apps/@SPIFFE_ID@
+  privilege: [ read, execute ]
+  resource: !variable @PASSWORD_VAR@
+
+- !permit
+  role: !host data/spiffe-apps/@SPIFFE_ID@
+  privilege: [ read, execute ]
+  resource: !variable @USERNAME_VAR@
