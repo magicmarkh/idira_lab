@@ -10,7 +10,6 @@ resource "idsec_pcloud_safe_member" "members" {
   for_each = var.safe_members
 
   safe_id                    = idsec_pcloud_safe.main.safe_id
-  safe_name                  = idsec_pcloud_safe.main.safe_name
   member_name                = each.value.member_name
   member_type                = each.value.member_type
   search_in                  = try(each.value.search_in, null)

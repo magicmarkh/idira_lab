@@ -12,7 +12,7 @@ terraform {
     }
     idsec = {
       source  = "cyberark/idsec"
-      version = "~> 0.4.0"
+      version = "~> 0.7.1"
     }
     random = {
       source  = "hashicorp/random"

@@ -4,6 +4,7 @@
 variable "asset_owner_name" {
   description = "Name of the human that the cloud team can contact with questions"
   type        = string
+  # Example: "jane.doe@example.com"
 }
 
 variable "region" {
@@ -13,62 +14,18 @@ variable "region" {
 }
 
 variable "team_name" {
-  description = "Cloud naming identifier"
+  description = "Cloud naming identifier (used as a prefix for resource names)"
   type        = string
-  default     = "us-ent-east"
-}
-
-# ===========================
-# Secrets Manager Variables
-# ===========================
-variable "domain_join_username" {
-  description = "Domain join username (e.g., CORP\\joinuser)"
-  type        = string
-}
-
-variable "domain_join_password" {
-  description = "Domain join password"
-  type        = string
-  sensitive   = true
-}
-
-variable "domain_join_secret_name" {
-  description = "Secrets Manager secret name"
-  type        = string
+  default     = "idira-lab"
 }
 
 # ===========================
 # IAM Role Variables
 # ===========================
-variable "CyberArkSecretsHubRoleARN" {
-  description = "The Secrets Hub tenant role ARN which will be trusted by this role - get this from the cyberark tenant in secrets hub settings."
+variable "ec2_tf_automation_role_name" {
+  description = "Name of the IAM role (and instance profile) for EC2 Terraform automation"
   type        = string
-}
-
-variable "cyberark_secret_arn" {
-  description = "ARN of the identity service account. Used if retrieving the service account from ASM."
-  type        = string
-}
-
-# ===========================
-# Remote State Variables
-# ===========================
-variable "state_bucket" {
-  description = "S3 bucket name for Terraform remote state"
-  type        = string
-  default     = "my-terraform-state-bucket"
-}
-
-variable "foundation_state_key" {
-  description = "S3 key for foundation Terraform state"
-  type        = string
-  default     = "terraform/foundation.tfstate"
-}
-
-variable "state_region" {
-  description = "AWS region for Terraform state bucket"
-  type        = string
-  default     = "us-east-1"
+  default     = "ec2-tf-automation-role"
 }
 
 # ===========================
@@ -77,7 +34,8 @@ variable "state_region" {
 variable "conjur_appliance_url" {
   description = "URL of the Conjur appliance"
   type        = string
-  default     = "https://murphyslab.secretsmgr.cyberark.cloud/api"
+  default     = ""
+  # Example: "https://<subdomain>.secretsmgr.cyberark.cloud/api"
 }
 
 variable "conjur_account" {
@@ -87,9 +45,10 @@ variable "conjur_account" {
 }
 
 variable "conjur_login" {
-  description = "Conjur login name"
+  description = "Conjur login name (host identity for API key auth)"
   type        = string
-  default     = "host/data/murphys-tf"
+  default     = ""
+  # Example: "host/data/aws/idira-lab-terraform"
 }
 
 variable "conjur_api_key" {
@@ -97,18 +56,21 @@ variable "conjur_api_key" {
   type        = string
   sensitive   = true
   default     = ""
+  # Example: "2x8y1a3b4c5d6e7f8g9h0i1j2k3l4m5n" (do not commit real values)
 }
 
 variable "conjur_aws_access_key_path" {
   description = "Conjur secret path for AWS Access Key ID"
   type        = string
   default     = ""
+  # Example: "data/aws/idira-lab/access_key_id"
 }
 
 variable "conjur_aws_secret_key_path" {
   description = "Conjur secret path for AWS Secret Access Key"
   type        = string
   default     = ""
+  # Example: "data/aws/idira-lab/secret_access_key"
 }
 
 variable "conjur_authn_type" {
@@ -125,12 +87,26 @@ variable "conjur_service_id" {
   description = "Conjur authn-iam service ID (required when conjur_authn_type = 'iam')"
   type        = string
   default     = ""
+  # Example: "prod"
 }
 
 variable "conjur_host_id" {
   description = "Conjur host identity for IAM auth (required when conjur_authn_type = 'iam')"
   type        = string
   default     = ""
+  # Example: "123456789012/idira-lab-ec2-role"
+}
+
+variable "conjur_identity_client_id_path" {
+  description = "Conjur secret path for the CyberArk Identity service-user client ID (used to authenticate the idsec provider)"
+  type        = string
+  # Example: "data/vault/aws/idira-lab-identity/username"
+}
+
+variable "conjur_identity_client_secret_path" {
+  description = "Conjur secret path for the CyberArk Identity service-user client secret (used to authenticate the idsec provider)"
+  type        = string
+  # Example: "data/vault/aws/idira-lab-identity/password"
 }
 
 # ===========================
@@ -139,11 +115,59 @@ variable "conjur_host_id" {
 variable "automation_iam_username" {
   description = "IAM username for the automation user"
   type        = string
-  default     = "us-ent-east-automation"
+  default     = "idira-lab-automation"
 }
 
 variable "automation_iam_user_path" {
   description = "Path for the automation IAM user"
   type        = string
   default     = "/"
+}
+
+# ===========================
+# CyberArk Vaulting Variables
+# ===========================
+variable "automation_safe_name" {
+  description = "Name of the CyberArk safe that will hold the automation user's AWS access key"
+  type        = string
+  default     = "m-idira-lab-automation"
+}
+
+variable "automation_safe_members" {
+  type = map(object({
+    member_name                = string
+    member_type                = string
+    search_in                  = optional(string)
+    membership_expiration_date = optional(number)
+    permission_set             = string
+  }))
+  description = "Map of members to add to the automation safe with their permissions"
+  default     = {}
+  # Example:
+  # {
+  #   conjur_sync = {
+  #     member_name    = "Conjur Sync"
+  #     member_type    = "User"
+  #     search_in      = "System Component Users"
+  #     permission_set = "read_only"
+  #   }
+  #   se_team = {
+  #     member_name    = "SE Team"
+  #     member_type    = "Group"
+  #     search_in      = "CyberArk Cloud Directory"
+  #     permission_set = "full"
+  #   }
+  # }
+}
+
+variable "automation_account_platform_id" {
+  description = "CyberArk platform ID for the AWS access key account (must be a rotation-capable platform since CyberArk owns rotation)"
+  type        = string
+  default     = "M-AWS-Access-Keys"
+}
+
+variable "automation_account_name" {
+  description = "Account name in CyberArk Privilege Cloud for the automation AWS access key"
+  type        = string
+  default     = "idira-lab-automation"
 }

@@ -47,12 +47,10 @@ data "aws_ami" "windows_2022_latest" {
 # REMOTE STATE - Foundation Layer
 # =====================================================================
 data "terraform_remote_state" "foundation" {
-  backend = "s3"
+  backend = "local"
 
   config = {
-    bucket = var.state_bucket
-    key    = var.foundation_state_key
-    region = var.state_region
+    path = "../01_foundation/terraform.tfstate"
   }
 }
 
@@ -60,12 +58,10 @@ data "terraform_remote_state" "foundation" {
 # REMOTE STATE - Security Layer
 # =====================================================================
 data "terraform_remote_state" "security" {
-  backend = "s3"
+  backend = "local"
 
   config = {
-    bucket = var.state_bucket
-    key    = var.security_state_key
-    region = var.state_region
+    path = "../02_security/terraform.tfstate"
   }
 }
 

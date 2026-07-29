@@ -11,12 +11,13 @@ output "iam_user_arn" {
   value       = aws_iam_user.this.arn
 }
 
-output "access_key_ids" {
-  description = "List of access key IDs for this user"
-  value       = data.aws_iam_access_keys.existing.access_keys[*].access_key_id
+output "access_key_id" {
+  description = "Access key ID for this user"
+  value       = aws_iam_access_key.this.id
 }
 
-output "access_key_count" {
-  description = "Number of access keys"
-  value       = length(data.aws_iam_access_keys.existing.access_keys)
+output "secret_access_key" {
+  description = "Secret access key for this user (bootstrap; vaulted in CyberArk)"
+  value       = aws_iam_access_key.this.secret
+  sensitive   = true
 }

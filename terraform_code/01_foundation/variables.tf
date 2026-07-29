@@ -4,18 +4,19 @@
 variable "asset_owner_name" {
   description = "Name of the human that the cloud team can contact with questions"
   type        = string
+  # Example: "jane.doe@example.com"
 }
 
 variable "region" {
   description = "AWS cloud region for the deployment"
   type        = string
-  default     = "us-east-2"
+  default     = "us-west-2"
 }
 
 variable "team_name" {
-  description = "Cloud naming identifier"
+  description = "Cloud naming identifier (used as a prefix for resource names and the S3 bucket)"
   type        = string
-  default     = "us-ent-east"
+  default     = "idira-lab"
 }
 
 # ===========================
@@ -24,13 +25,13 @@ variable "team_name" {
 variable "private_subnet_az" {
   description = "AWS identifier for the private subnet AZ"
   type        = string
-  default     = "us-east-2b"
+  default     = "us-west-2b"
 }
 
 variable "public_subnet_az" {
   description = "AWS identifier for the public subnet AZ"
   type        = string
-  default     = "us-east-2a"
+  default     = "us-west-2a"
 }
 
 variable "vpc_cidr" {
@@ -54,19 +55,13 @@ variable "private_subnet_cidr" {
 variable "domain_name" {
   description = "Name of the domain to join connectors to"
   type        = string
+  # Example: "idira.lab"
 }
 
 variable "dc1_private_ip" {
   description = "Private IP of DC1 (used as DNS server IP)"
   type        = string
-}
-
-# ===========================
-# Security Group Variables
-# ===========================
-variable "trusted_ips" {
-  description = "Trusted public IPs"
-  type        = list(string)
+  # Example: "192.168.20.10"
 }
 
 # ===========================
@@ -75,7 +70,8 @@ variable "trusted_ips" {
 variable "conjur_appliance_url" {
   description = "URL of the Conjur appliance"
   type        = string
-  default     = "https://murphyslab.secretsmgr.cyberark.cloud/api"
+  default     = ""
+  # Example: "https://conjur.idira.lab/api"
 }
 
 variable "conjur_account" {
@@ -85,9 +81,10 @@ variable "conjur_account" {
 }
 
 variable "conjur_login" {
-  description = "Conjur login name"
+  description = "Conjur login name (host identity for API key auth)"
   type        = string
-  default     = "host/data/murphys-tf"
+  default     = ""
+  # Example: "host/data/aws/idira-lab-terraform"
 }
 
 variable "conjur_api_key" {
@@ -95,18 +92,21 @@ variable "conjur_api_key" {
   type        = string
   sensitive   = true
   default     = ""
+  # Example: "2x8y1a3b4c5d6e7f8g9h0i1j2k3l4m5n" (do not commit real values)
 }
 
 variable "conjur_aws_access_key_path" {
   description = "Conjur secret path for AWS Access Key ID"
   type        = string
   default     = ""
+  # Example: "data/aws/idira-lab/access_key_id"
 }
 
 variable "conjur_aws_secret_key_path" {
   description = "Conjur secret path for AWS Secret Access Key"
   type        = string
   default     = ""
+  # Example: "data/aws/idira-lab/secret_access_key"
 }
 
 variable "conjur_authn_type" {
@@ -123,10 +123,12 @@ variable "conjur_service_id" {
   description = "Conjur authn-iam service ID (required when conjur_authn_type = 'iam')"
   type        = string
   default     = ""
+  # Example: "prod"
 }
 
 variable "conjur_host_id" {
   description = "Conjur host identity for IAM auth (required when conjur_authn_type = 'iam')"
   type        = string
   default     = ""
+  # Example: "123456789012/idira-lab-ec2-role"
 }

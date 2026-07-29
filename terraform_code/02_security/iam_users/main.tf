@@ -14,11 +14,18 @@ resource "aws_iam_user" "this" {
 }
 
 # =====================================================================
-# IAM Access Key - Data Source (existing key)
-# Note: Using data source instead of resource due to import bug in AWS provider
-# The access key exists and is referenced here, but not managed by Terraform
-# This allows us to output the key ID for CyberArk integration
+# IAM Access Key - Bootstrap key
 # =====================================================================
-data "aws_iam_access_keys" "existing" {
+# Terraform creates this key ONCE so the secret can be captured and stored
+# in the CyberArk safe (AWS only returns the secret at creation time).
+#
+# ROTATION HANDOFF: CyberArk owns rotation of this account. Rotation deletes
+# this key and creates a new one, which would otherwise make Terraform
+# regenerate it on the next apply. After the first successful apply, remove
+# this resource from state so CyberArk fully owns the credential:
+#
+#   terraform state rm 'module.create_automation_user.aws_iam_access_key.this'
+# =====================================================================
+resource "aws_iam_access_key" "this" {
   user = aws_iam_user.this.name
 }

@@ -42,16 +42,6 @@ output "bucket_id" {
 # ===========================
 # Security Group Outputs
 # ===========================
-output "trusted_ssh_external_security_group_id" {
-  description = "ID of trusted SSH external security group"
-  value       = module.security_groups.trusted_ssh_external_security_group_id
-}
-
-output "trusted_rdp_external_security_group_id" {
-  description = "ID of trusted RDP external security group"
-  value       = module.security_groups.trusted_rdp_external_security_group_id
-}
-
 output "ssh_internal_flat_sg_id" {
   description = "ID of SSH internal flat security group"
   value       = module.security_groups.ssh_internal_flat_sg_id

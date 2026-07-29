@@ -4,12 +4,10 @@ data "aws_caller_identity" "current" {}
 # REMOTE STATE - Foundation Layer
 # =====================================================================
 data "terraform_remote_state" "foundation" {
-  backend = "s3"
+  backend = "local"
 
   config = {
-    bucket = var.state_bucket
-    key    = var.foundation_state_key
-    region = var.state_region
+    path = "../01_foundation/terraform.tfstate"
   }
 }
 

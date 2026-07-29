@@ -15,18 +15,16 @@ module "vpc" {
 }
 
 module "s3_bucket" {
-  source             = "./s3_bucket"
-  region             = var.region
-  asset_owner_name   = var.asset_owner_name
-  bucket_name        = var.team_name
-  s3_vpc_endpoint_id = module.vpc.s3_vpc_endpoint_id
+  source           = "./s3_bucket"
+  region           = var.region
+  asset_owner_name = var.asset_owner_name
+  bucket_name      = "mh-tf-west-lab"
 }
 
 module "security_groups" {
   source              = "./networking/security_groups"
   asset_owner_name    = var.asset_owner_name
   vpc_id              = module.vpc.vpc_id
-  trusted_ips         = var.trusted_ips
   team_name           = var.team_name
   internal_subnets    = ["${var.public_subnet_cidr}", "${var.private_subnet_cidr}"]
   private_subnet_cidr = var.private_subnet_cidr

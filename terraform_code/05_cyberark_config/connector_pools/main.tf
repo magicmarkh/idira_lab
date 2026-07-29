@@ -3,11 +3,9 @@ data "aws_caller_identity" "current" {}
 
 # Data source to reference infrastructure outputs
 data "terraform_remote_state" "foundation" {
-  backend = "s3"
+  backend = "local"
   config = {
-    bucket = var.state_bucket
-    key    = var.foundation_state_key
-    region = var.state_region
+    path = "../../01_foundation/terraform.tfstate"
   }
 }
 

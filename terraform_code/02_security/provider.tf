@@ -15,6 +15,10 @@ terraform {
       source  = "cyberark/conjur"
       version = "~> 0.8.1"
     }
+    idsec = {
+      source  = "cyberark/idsec"
+      version = "~> 0.7.1"
+    }
   }
 }
 
@@ -33,4 +37,23 @@ provider "conjur" {
   # IAM auth (EC2) — null when using API key
   service_id = var.conjur_authn_type == "iam" ? var.conjur_service_id : null
   host_id    = var.conjur_authn_type == "iam" ? var.conjur_host_id : null
+}
+
+# =====================================================================
+# CyberArk Identity Security (IDSec) Provider
+# Authenticates as an Identity service user whose credentials are
+# retrieved from Conjur. Used to create the safe and vault the AWS key.
+# =====================================================================
+data "conjur_secret" "identity_client_id" {
+  name = var.conjur_identity_client_id_path
+}
+
+data "conjur_secret" "identity_client_secret" {
+  name = var.conjur_identity_client_secret_path
+}
+
+provider "idsec" {
+  auth_method   = "identity_service_user"
+  service_user  = data.conjur_secret.identity_client_id.value
+  service_token = data.conjur_secret.identity_client_secret.value
 }

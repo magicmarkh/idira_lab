@@ -51,11 +51,9 @@ data "conjur_secret" "swa_agent_enrollment_token" {
 
 # Data source to reference CyberArk connector pools outputs
 data "terraform_remote_state" "cyberark_connector_pools" {
-  backend = "s3"
+  backend = "local"
 
   config = {
-    bucket = var.state_bucket
-    key    = var.cyberark_connector_pools_state_key
-    region = var.state_region
+    path = "../05_cyberark_config/connector_pools/terraform.tfstate"
   }
 }
