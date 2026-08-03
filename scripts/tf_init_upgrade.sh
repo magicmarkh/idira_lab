@@ -17,10 +17,17 @@ source "${SCRIPT_DIR}/config.sh"
 
 FILTER="${1:-}"
 
-# Also include sia_settings which is missing from TERRAFORM_CODE_DIRS in config.sh
+# Also include the deferred idira_config sub-states (moved to
+# terraform_code/_future_idira_config/) so their provider lockfiles still get
+# upgraded even though they're not in the active TERRAFORM_CODE_DIRS apply set.
 ALL_DIRS=(
     "${TERRAFORM_CODE_DIRS[@]}"
-    "03_idira_config/sia_settings"
+    "_future_idira_config/sia_settings"
+    "_future_idira_config/users"
+    "_future_idira_config/accounts/database"
+    "_future_idira_config/accounts/linux"
+    "_future_idira_config/accounts/windows"
+    "_future_idira_config/secrets_manager_swa"
 )
 
 # De-duplicate and sort (compatible with macOS bash 3.2)

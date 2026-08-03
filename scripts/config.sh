@@ -22,15 +22,14 @@ TERRAFORM_CODE_DIRS=(
     "01_foundation"
     "02_security"
     "03_idira_config/connector_pools"
-    "03_idira_config/users"
-    "03_idira_config/accounts/database"
-    "03_idira_config/accounts/linux"
-    "03_idira_config/accounts/windows"
     "04_ec2_compute"
     "05_rds_databases"
     "06_aws_cce_config"
     "99_demo/windows_target"
     "99_demo/linux_target"
+    # Deferred idira_config sub-states (users, accounts/*, sia_settings,
+    # secrets_manager_swa) moved to terraform_code/_future_idira_config/ —
+    # re-add here when you're ready to deploy them.
 )
 
 # Example directories to process

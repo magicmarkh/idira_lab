@@ -47,4 +47,4 @@ real values in `terraform.tfvars` (synced via `scripts/push_tfvars.sh` /
 `scripts/pull_tfvars.sh`). If the Idira safe-member provisioning bug recurs
 on the pinned `idsec` provider version, the resource may need to be commented
 out and membership added manually via Identity Administration / PVWA — the same
-interim approach used in `03_idira_config/accounts/database/database.tf`.
+interim approach used in `_future_idira_config/accounts/database/database.tf`.

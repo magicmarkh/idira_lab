@@ -11,7 +11,7 @@
 #
 # Prereqs: you need the SWA agent Helm chart coordinates and an enrollment token
 # from your SWA / Secrets Manager tenant. Also apply the Secrets Manager side:
-#   terraform_code/03_idira_config/secrets_manager_swa/apply_swa_policy.sh
+#   terraform_code/_future_idira_config/secrets_manager_swa/apply_swa_policy.sh
 # =============================================================================
 
 enable_swa_workloads    = true

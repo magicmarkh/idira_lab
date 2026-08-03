@@ -11,7 +11,7 @@ the node using the ec2 pem.
    then `terraform apply` (or run `ansible-playbook playbooks/setup_swa_workloads.yml`
    directly).
 2. The Secrets Manager side is applied
-   (`terraform_code/03_idira_config/secrets_manager_swa/apply_swa_policy.sh`).
+   (`terraform_code/_future_idira_config/secrets_manager_swa/apply_swa_policy.sh`).
 
 ## Setup
 

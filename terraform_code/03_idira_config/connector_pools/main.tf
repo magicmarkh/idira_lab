@@ -9,6 +9,12 @@ data "terraform_remote_state" "foundation" {
   }
 }
 
+# Look up the private subnet's CIDR block from its ID (foundation outputs the ID,
+# not the CIDR) so the pool can be identified by its private network range.
+data "aws_subnet" "private" {
+  id = data.terraform_remote_state.foundation.outputs.private_subnet_id
+}
+
 # Local values combining infrastructure outputs
 locals {
   pool_identifiers = {
@@ -16,10 +22,13 @@ locals {
       value = "*.cyberark.cloud"
       type  = "GENERAL_FQDN"
     }
-    "AWSRdsDomain" = {
-      value = "*.${var.rds_domain_name}"
-      type  = "GENERAL_FQDN"
-    }
+    # RDS is not deployed yet and its endpoint is unknown, so the RDS pool
+    # identifier is intentionally deferred. Re-enable this (and set
+    # rds_domain_name in terraform.tfvars) once 05_rds_databases exists.
+    # "AWSRdsDomain" = {
+    #   value = "*.${var.rds_domain_name}"
+    #   type  = "GENERAL_FQDN"
+    # }
     "aws_vpc" = {
       value = data.terraform_remote_state.foundation.outputs.vpc_id
       type  = "AWS_VPC"
@@ -27,6 +36,10 @@ locals {
     "aws_subnet" = {
       value = "${data.terraform_remote_state.foundation.outputs.vpc_id}/${data.terraform_remote_state.foundation.outputs.private_subnet_id}"
       type  = "AWS_SUBNET"
+    }
+    "private_subnet_cidr" = {
+      value = data.aws_subnet.private.cidr_block
+      type  = "GENERAL_CIDR_BLOCK"
     }
     "aws_account" = {
       value = data.aws_caller_identity.current.account_id
