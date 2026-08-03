@@ -68,6 +68,14 @@ resource "aws_iam_role_policy" "s3_policy" {
   policy = data.aws_iam_policy_document.s3_access.json
 }
 
+# SSM core access so the SSM agent can register the instance and support
+# Session Manager / port forwarding (used to drive Ansible to the private DC
+# from outside the VPC without opening inbound ports or a VPN).
+resource "aws_iam_role_policy_attachment" "ssm_core" {
+  role       = aws_iam_role.ec2_tf_automation_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 # Instance profile for EC2 instances
 resource "aws_iam_instance_profile" "ec2_tf_automation_instance_profile" {
   name = "${var.ec2_tf_automation_role_name}-profile"

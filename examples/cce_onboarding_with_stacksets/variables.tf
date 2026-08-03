@@ -1,14 +1,14 @@
 # ===========================
-# CyberArk Identity Security Platform
+# Idira Identity Security Platform
 # ===========================
 variable "idsec_service_user" {
-  description = "CyberArk Identity service user for idsec provider authentication"
+  description = "Idira Identity service user for idsec provider authentication"
   type        = string
   sensitive   = true
 }
 
 variable "idsec_service_token" {
-  description = "CyberArk Identity service token for idsec provider authentication"
+  description = "Idira Identity service token for idsec provider authentication"
   type        = string
   sensitive   = true
 }
@@ -41,7 +41,7 @@ variable "organization_root_id" {
 }
 
 variable "display_name" {
-  description = "Display name for the organization in CyberArk CCE"
+  description = "Display name for the organization in Idira CCE"
   type        = string
   default     = "My Org"
 }

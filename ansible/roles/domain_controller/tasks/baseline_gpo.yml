@@ -1,0 +1,21 @@
+---
+# Apply the baseline domain password policy + a registry-based baseline GPO,
+# linked to the domain root. Driven by files/baseline_gpo.ps1 (param() block)
+# to avoid depending on an uncertain win_gpo module.
+
+- name: Apply baseline password policy and GPO
+  ansible.windows.win_powershell:
+    script: "{{ lookup('file', 'baseline_gpo.ps1') }}"
+    parameters:
+      GpoName: "{{ dc_gpo_name }}"
+      MinPasswordLength: "{{ dc_gpo_min_password_length | string }}"
+      DisableSmbV1: "{{ dc_gpo_disable_smbv1 | string }}"
+      EnableRdp: "{{ dc_gpo_enable_rdp | string }}"
+      EnableWinrm: "{{ dc_gpo_enable_winrm | string }}"
+      DomainDn: "{{ dc_domain_dn }}"
+  register: baseline_gpo
+  changed_when: true
+
+- name: Show baseline GPO results
+  ansible.builtin.debug:
+    var: baseline_gpo.output

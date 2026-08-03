@@ -11,6 +11,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.36"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
     conjur = {
       source  = "cyberark/conjur"
       version = "~> 0.8.1"
@@ -40,7 +44,7 @@ provider "conjur" {
 }
 
 # =====================================================================
-# CyberArk Identity Security (IDSec) Provider
+# Idira Identity Security (IDSec) Provider
 # Authenticates as an Identity service user whose credentials are
 # retrieved from Conjur. Used to create the safe and vault the AWS key.
 # =====================================================================

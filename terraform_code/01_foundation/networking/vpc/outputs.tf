@@ -5,7 +5,7 @@ output "vpc_id" {
 
 output "vpc_arn" {
   description = "arn of the VPC"
-  value = aws_vpc.main.arn
+  value       = aws_vpc.main.arn
 }
 
 output "public_subnet_id" {

@@ -5,7 +5,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${var.team_name}-vpc"
+    Name  = "${var.team_name}-vpc"
     Owner = var.asset_owner_name
   }
 }
@@ -32,7 +32,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${var.team_name}-igw"
+    Name  = "${var.team_name}-igw"
     Owner = var.asset_owner_name
   }
 }
@@ -45,7 +45,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.team_name}-public-subnet"
+    Name  = "${var.team_name}-public-subnet"
     Owner = var.asset_owner_name
   }
 }
@@ -58,15 +58,15 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "${var.team_name}-private-subnet"
+    Name  = "${var.team_name}-private-subnet"
     Owner = var.asset_owner_name
   }
 }
 
 # Elastic IP for NAT Gateway
 resource "aws_eip" "nat_eip" {
-    tags = {
-    Name = "${var.team_name}-nat-eip"
+  tags = {
+    Name  = "${var.team_name}-nat-eip"
     Owner = var.asset_owner_name
   }
 }
@@ -77,7 +77,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = aws_subnet.public.id
 
   tags = {
-    Name = "${var.team_name}-nat-gateway"
+    Name  = "${var.team_name}-nat-gateway"
     Owner = var.asset_owner_name
   }
 
@@ -94,7 +94,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "${var.team_name}-public-rt"
+    Name  = "${var.team_name}-public-rt"
     Owner = var.asset_owner_name
   }
 }
@@ -115,7 +115,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "${var.team_name}-private-rt"
+    Name  = "${var.team_name}-private-rt"
     Owner = var.asset_owner_name
   }
 }
@@ -132,5 +132,5 @@ resource "aws_vpc_endpoint" "s3" {
   service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.private.id]
-  tags = { Name = "${var.team_name}-s3-gateway-endpoint" }
+  tags              = { Name = "${var.team_name}-s3-gateway-endpoint" }
 }

@@ -5,9 +5,9 @@ set -euo pipefail
 # Rotation handoff for the 02_security automation AWS access key
 # =====================================================================
 # Terraform creates the automation user's AWS access key ONCE so the
-# secret can be captured and vaulted in CyberArk Privilege Cloud
+# secret can be captured and vaulted in Idira Privilege Cloud
 # (see terraform_code/02_security/iam_users/main.tf). After the first
-# successful apply, CyberArk owns rotation of that credential. The
+# successful apply, Idira owns rotation of that credential. The
 # bootstrap access-key resource must therefore be removed from
 # Terraform state so a later apply does not regenerate (and thereby
 # invalidate) the CPM-rotated key.
@@ -16,7 +16,7 @@ set -euo pipefail
 #   - if the resource is still tracked, it removes it and confirms
 #   - if it is already gone, it exits cleanly with "nothing to do"
 #
-# `terraform state rm` does not call the provider, so no Conjur/CyberArk
+# `terraform state rm` does not call the provider, so no Conjur/Idira
 # credentials are required to run this.
 # =====================================================================
 
@@ -24,7 +24,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
-# Resource to hand off to CyberArk-owned rotation
+# Resource to hand off to Idira-owned rotation
 MODULE_DIR="${REPO_ROOT}/terraform_code/02_security"
 RESOURCE_ADDRESS="module.create_automation_user.aws_iam_access_key.this"
 
@@ -64,7 +64,7 @@ main() {
         terraform state rm "${RESOURCE_ADDRESS}"
         echo ""
         echo -e "${COLOR_GREEN}✓ Removed ${RESOURCE_ADDRESS} from state.${COLOR_RESET}"
-        echo "  CyberArk now fully owns rotation of this credential."
+        echo "  Idira now fully owns rotation of this credential."
     else
         echo -e "${COLOR_YELLOW}⊘ ${RESOURCE_ADDRESS} is not in state.${COLOR_RESET}"
         echo "  Nothing to do — handoff has already been completed."

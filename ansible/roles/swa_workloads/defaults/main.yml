@@ -18,7 +18,7 @@ swa_kind_cluster_name: kind
 swa_kind_node_container: "{{ swa_kind_cluster_name }}-control-plane"
 swa_kube_user: ec2-user
 # Where the k8s Go source is copied FROM (on the control host) and TO (on the node).
-swa_k8s_src_local: "{{ playbook_dir }}/../../terraform_code/03_ec2_compute/ec2_instances/kind_node/k8s"
+swa_k8s_src_local: "{{ playbook_dir }}/../../terraform_code/04_ec2_compute/ec2_instances/kind_node/k8s"
 swa_k8s_dst: "/home/{{ swa_kube_user }}/swa"
 
 # ---- Gap A: SWA agent (OPERATOR-SUPPLIED — no sane default can be invented) --

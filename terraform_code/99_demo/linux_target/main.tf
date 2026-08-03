@@ -1,9 +1,9 @@
 # =====================================================================
-# Demo Linux Target with CyberArk SSH Public Key Management
+# Demo Linux Target with Idira SSH Public Key Management
 #
 # This is a self-contained demonstration that shows:
 # 1. Deploying a Linux EC2 instance
-# 2. Adding a CyberArk-managed SSH public key using the idsec provider
+# 2. Adding a Idira-managed SSH public key using the idsec provider
 #
 # All components are in this single file for easy demonstration.
 # =====================================================================
@@ -60,7 +60,7 @@ provider "aws" {
 }
 
 # =====================================================================
-# Provider: CyberArk Identity Security (IDSec)
+# Provider: Idira Identity Security (IDSec)
 # =====================================================================
 provider "idsec" {
   auth_method   = "identity_service_user"
@@ -128,7 +128,7 @@ resource "aws_instance" "demo_linux_target" {
   tags = {
     Name                 = "${var.team_name}-${var.hostname}"
     I_Owner              = var.asset_owner_name
-    I_Purpose            = "Demo Linux Target - CyberArk SSH Key Management"
+    I_Purpose            = "Demo Linux Target - Idira SSH Key Management"
     CA_iScheduler        = var.iScheduler
     CA_iSchedulerControl = "yes"
   }
@@ -139,11 +139,11 @@ resource "aws_instance" "demo_linux_target" {
 }
 
 # =====================================================================
-# CyberArk SSH Public Key: Add public key to Linux system
+# Idira SSH Public Key: Add public key to Linux system
 # =====================================================================
 resource "idsec_sia_ssh_public_key" "demo_linux_target_key" {
-  target_machine = aws_instance.demo_linux_target.private_ip
-  username = "ec2-user"
+  target_machine       = aws_instance.demo_linux_target.private_ip
+  username             = "ec2-user"
   private_key_contents = data.conjur_secret.aws_pem_key.value
 
   depends_on = [aws_instance.demo_linux_target]

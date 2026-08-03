@@ -1,0 +1,32 @@
+# JWT authenticator for Idira Secure Workload Access (SWA).
+# Load under branch `conjur` -> creates conjur/authn-jwt/secureWorkloadAccess.
+#
+#   conjur policy load -b conjur -f authn-jwt-secureWorkloadAccess.yml
+#
+# The four variables are populated afterwards by apply_swa_policy.sh:
+#   jwks-uri, issuer, token-app-property (=sub), identity-path.
+- !policy
+  id: authn-jwt/secureWorkloadAccess
+  body:
+    - !webservice
+
+    # Authenticator configuration variables
+    - !variable jwks-uri
+    - !variable token-app-property
+    - !variable issuer
+    - !variable identity-path
+
+    # Workloads permitted to authenticate go into this group
+    - !group authenticatable
+    - !permit
+      role: !group authenticatable
+      privilege: [ read, authenticate ]
+      resource: !webservice
+
+    # Optional status endpoint for health checks
+    - !webservice status
+    - !group operators
+    - !permit
+      role: !group operators
+      privilege: [ read ]
+      resource: !webservice status

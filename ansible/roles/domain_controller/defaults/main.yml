@@ -1,0 +1,64 @@
+---
+# =============================================================================
+# domain_controller role defaults
+#
+# Promotes a standalone Windows Server into the first DC of a new forest, then
+# builds a lab-baseline Active Directory: an OU tree, demo groups/users, a
+# domain-join service account, and baseline GPOs.
+#
+# The four values below are REQUIRED and have empty sentinels asserted by
+# tasks/main.yml. They are supplied by Terraform via promote_via_ssm.sh:
+#   dc_domain_fqdn, dc_domain_netbios, dc_dsrm_password,
+#   dc_service_account_name, dc_service_account_password
+# =============================================================================
+
+# ---- Forest / domain (OPERATOR/TERRAFORM-SUPPLIED) --------------------------
+dc_domain_fqdn: ""              # REQUIRED - e.g. murphyslab.local
+dc_domain_netbios: ""          # REQUIRED - e.g. MURPHYSLAB
+dc_dsrm_password: ""           # REQUIRED (sensitive) - safe-mode password
+dc_forest_mode: WinThreshold   # 2016 functional level
+dc_domain_mode: WinThreshold
+
+# ---- Domain-join service account (created in AD) ----------------------------
+dc_service_account_name: ""            # REQUIRED - sAMAccountName, e.g. svc-domain-joiner
+dc_service_account_password: ""        # REQUIRED (sensitive)
+dc_service_account_display_name: "Domain Join Service Account"
+dc_service_account_description: "Machine-join service account managed by Terraform/Ansible"
+
+# ---- OU tree ----------------------------------------------------------------
+dc_base_ou: "Idira"
+dc_sub_ous:
+  - Users
+  - Groups
+  - Servers
+  - ServiceAccounts
+
+# ---- Demo groups ------------------------------------------------------------
+dc_groups:
+  - name: Lab-Admins
+    description: "Lab administrators"
+    scope: global
+  - name: Lab-Users
+    description: "Standard lab users"
+    scope: global
+
+# ---- Demo users -------------------------------------------------------------
+# Password is a lab default; rotate/vault in a later iteration.
+dc_user_default_password: "Ch@ngeMe-Lab-2026!"
+dc_users:
+  - name: alice.analyst
+    display_name: "Alice Analyst"
+    groups: [Lab-Users]
+  - name: bob.builder
+    display_name: "Bob Builder"
+    groups: [Lab-Users]
+  - name: carol.admin
+    display_name: "Carol Admin"
+    groups: [Lab-Admins, Lab-Users]
+
+# ---- Baseline GPO knobs -----------------------------------------------------
+dc_gpo_name: "Murphys Lab Baseline"
+dc_gpo_min_password_length: 14
+dc_gpo_disable_smbv1: true
+dc_gpo_enable_rdp: true
+dc_gpo_enable_winrm: true

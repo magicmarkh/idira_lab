@@ -20,7 +20,7 @@ FILTER="${1:-}"
 # Also include sia_settings which is missing from TERRAFORM_CODE_DIRS in config.sh
 ALL_DIRS=(
     "${TERRAFORM_CODE_DIRS[@]}"
-    "05_cyberark_config/sia_settings"
+    "03_idira_config/sia_settings"
 )
 
 # De-duplicate and sort (compatible with macOS bash 3.2)

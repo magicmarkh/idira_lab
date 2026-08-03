@@ -78,25 +78,25 @@ variable "domain_name" {
 variable "domain_ou_path" {
   description = "Active Directory Organizational Unit path for the computer object (e.g., OU=Servers,DC=murphyslab,DC=local)"
   type        = string
-  default     = "CN=Computers"  # Default computers container
+  default     = "CN=Computers" # Default computers container
 }
 
 # ===========================
-# CyberArk Configuration
+# Idira Configuration
 # ===========================
 variable "platform_id" {
-  description = "CyberArk platform ID for Windows local admin accounts"
+  description = "Idira platform ID for Windows local admin accounts"
   type        = string
   default     = "M-Windows-Server-Local-Admin"
 }
 
 variable "safe_name" {
-  description = "Name of the safe created in CyberArk"
-  type = string
-  default = "m-eph-windows-local"
+  description = "Name of the safe created in Idira"
+  type        = string
+  default     = "m-eph-windows-local"
 }
 variable "safe_description" {
-  description = "Description for the CyberArk safe"
+  description = "Description for the Idira safe"
   type        = string
   default     = "Demo Windows Target Server - Local Administrator Account"
 }

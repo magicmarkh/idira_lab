@@ -29,6 +29,8 @@ module "create_automation_user" {
   iam_username  = var.automation_iam_username
   iam_user_path = var.automation_iam_user_path
 
+  create_bootstrap_access_key = var.create_bootstrap_access_key
+
   tags = {
     Owner       = var.asset_owner_name
     Team        = var.team_name

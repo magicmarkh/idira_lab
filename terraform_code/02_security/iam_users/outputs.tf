@@ -12,12 +12,12 @@ output "iam_user_arn" {
 }
 
 output "access_key_id" {
-  description = "Access key ID for this user"
-  value       = aws_iam_access_key.this.id
+  description = "Access key ID for this user (bootstrap only; null once Idira owns rotation and the key is out of state)"
+  value       = one(aws_iam_access_key.this[*].id)
 }
 
 output "secret_access_key" {
-  description = "Secret access key for this user (bootstrap; vaulted in CyberArk)"
-  value       = aws_iam_access_key.this.secret
+  description = "Secret access key for this user (bootstrap only; null once Idira owns rotation)"
+  value       = one(aws_iam_access_key.this[*].secret)
   sensitive   = true
 }

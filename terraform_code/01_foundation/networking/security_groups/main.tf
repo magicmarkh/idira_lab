@@ -334,7 +334,7 @@ resource "aws_security_group" "mysql_target_sg" {
   }
 
   tags = {
-    Name        = "${var.team_name}-mysql-sg"
+    Name = "${var.team_name}-mysql-sg"
   }
 }
 
@@ -359,7 +359,7 @@ resource "aws_security_group" "postgresql_target_sg" {
   }
 
   tags = {
-    Name        = "${var.team_name}-postgresql-sg"
+    Name = "${var.team_name}-postgresql-sg"
   }
 }
 

@@ -50,7 +50,7 @@ locals {
 }
 
 # ===========================
-# CyberArk Tenant & Organization Details
+# Idira Tenant & Organization Details
 # ===========================
 data "idsec_cce_aws_tenant_service_details" "tenant" {}
 
@@ -75,7 +75,7 @@ locals {
 
 resource "aws_cloudformation_stack_set" "cce_member_account_roles" {
   name             = "cce-member-account-iam-roles"
-  description      = "CyberArk CCE IAM roles for SCA/SIA in organization member accounts"
+  description      = "Idira CCE IAM roles for SCA/SIA in organization member accounts"
   permission_model = "SERVICE_MANAGED"
   call_as          = "SELF"
 
@@ -119,7 +119,7 @@ resource "aws_cloudformation_stack_set_instance" "all_member_accounts" {
 }
 
 # ===========================
-# Register Member Accounts with CyberArk API
+# Register Member Accounts with Idira API
 # ===========================
 resource "idsec_cce_aws_organization_account" "member_accounts" {
   for_each = local.member_accounts

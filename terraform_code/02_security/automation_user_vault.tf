@@ -1,39 +1,31 @@
 # =====================================================================
-# Vault the automation user's AWS access key in CyberArk
+# Vault the automation user's AWS access key in Idira
 #
 # Creates a dedicated safe, adds members, and stores the bootstrap AWS
-# access key (created by the iam_users module) as a CyberArk account.
+# access key (created by the iam_users module) as a Idira account.
 #
-# ROTATION: CyberArk owns rotation of this account. The account's
-# `username` (access key ID) and `secret` are marked ignore_changes so
-# re-applies never revert the CPM-rotated credential. See the handoff
-# note in iam_users/main.tf for the post-apply `terraform state rm` step.
+# ROTATION: Idira owns rotation of this account. On rotation the CPM
+# issues a new access key ID (the `AWSAccessKeyID` platform property) and
+# secret; the IAM `username` is stable. The rotated fields are marked
+# ignore_changes so re-applies never revert the CPM-rotated credential.
+# See the handoff note in iam_users/main.tf for the post-apply
+# `terraform state rm` step.
 # =====================================================================
 
 # ---------------------------------------------------------------------
-# Safe for the automation AWS access key
+# Safe (+ members) for the automation AWS access key
+#
+# Uses the shared unprotected safe module. Nothing in 02_security needs
+# destroy protection today; use ../modules/idira/safe_protected for
+# safes that must survive `terraform destroy`.
 # ---------------------------------------------------------------------
-resource "idsec_pcloud_safe" "automation" {
-  safe_name                = var.automation_safe_name
-  description              = "AWS access key for the ${var.automation_iam_username} automation user"
-  number_of_days_retention = 7
-  auto_purge_enabled       = false
-  olac_enabled             = false
-  location                 = "\\"
-}
+module "safe" {
+  source = "../modules/idira/safe"
 
-# ---------------------------------------------------------------------
-# Safe members
-# ---------------------------------------------------------------------
-resource "idsec_pcloud_safe_member" "members" {
-  for_each = var.automation_safe_members
-
-  safe_id                    = idsec_pcloud_safe.automation.safe_id
-  member_name                = each.value.member_name
-  member_type                = each.value.member_type
-  search_in                  = try(each.value.search_in, null)
-  membership_expiration_date = try(each.value.membership_expiration_date, null)
-  permission_set             = each.value.permission_set
+  safe_name      = var.automation_safe_name
+  description    = "AWS access key storage"
+  retention_days = 7
+  members        = var.automation_safe_members
 }
 
 # ---------------------------------------------------------------------
@@ -41,30 +33,35 @@ resource "idsec_pcloud_safe_member" "members" {
 # ---------------------------------------------------------------------
 resource "idsec_pcloud_account" "automation" {
   platform_id = var.automation_account_platform_id
-  username    = module.create_automation_user.access_key_id
+  username    = module.create_automation_user.iam_user_name
   address     = data.aws_caller_identity.current.account_id
-  secret      = module.create_automation_user.secret_access_key
-  safe_name   = idsec_pcloud_safe.automation.safe_name
-  name        = var.automation_account_name
+  # secret / AWSAccessKeyID come from the bootstrap key on the initial build.
+  # Once the key is handed off to Idira (create_bootstrap_access_key = false),
+  # the module outputs are null, so fall back to a placeholder. This is safe:
+  # both fields are in ignore_changes below, so the CPM-rotated values on the
+  # existing account are never reverted.
+  secret    = coalesce(module.create_automation_user.secret_access_key, "cpm-managed")
+  safe_name = module.safe.safe_name
+  name      = var.automation_account_name
 
-  # CyberArk owns rotation. Ignore the fields the CPM changes on rotation
-  # (username/secret) plus the CyberArk-computed/immutable fields.
+  # The AWS Access Keys platform requires the access key ID as a mandatory
+  # platform property.
+  platform_account_properties = {
+    AWSAccessKeyID = coalesce(module.create_automation_user.access_key_id, "cpm-managed")
+    AWSAccountID   = data.aws_caller_identity.current.account_id
+  }
+
+  # Idira (CPM) owns rotation. The access key ID (AWSAccessKeyID property)
+  # and secret change on rotation; the IAM username does not. Ignore the
+  # rotated and immutable fields so re-applies never revert them.
   lifecycle {
     ignore_changes = [
-      username,                    # access key ID changes on CPM rotation
-      secret,                      # secret changes on CPM rotation
+      secret,                      # rotated by the CPM
+      platform_account_properties, # AWSAccessKeyID rotated by the CPM
       address,                     # cannot be modified on existing accounts
-      account_id,                  # computed by CyberArk
-      created_time,                # computed by CyberArk
-      category_modification_time,  # computed by CyberArk
-      platform_account_properties, # managed by CyberArk platform
-      secret_type,                 # computed field
-      status                       # computed field
+      secret_type                  # set server-side
     ]
   }
 
-  depends_on = [
-    idsec_pcloud_safe.automation,
-    idsec_pcloud_safe_member.members
-  ]
+  depends_on = [module.safe]
 }

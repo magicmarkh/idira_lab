@@ -2,12 +2,12 @@
 
 This is the first layer of the IDIRA lab AWS environment. It stands up the core
 networking, storage, and firewall primitives that every later stage
-(`02_security`, `03_ec2_compute`, `04_rds_databases`, `05_cyberark_config`, …)
+(`02_security`, `03_idira_config`, `04_ec2_compute`, `05_rds_databases`, …)
 builds on top of.
 
 AWS credentials for this module are **not** supplied the usual way (static keys,
 profiles, or an instance role). Instead they are pulled at plan/apply time from
-**CyberArk Conjur**, so a working Conjur identity is a hard prerequisite.
+**Idira Conjur**, so a working Conjur identity is a hard prerequisite.
 
 ---
 
@@ -30,7 +30,7 @@ from [outputs.tf](outputs.tf) for consumption by later stages.
 - **Providers** (installed by `terraform init`):
   - `hashicorp/aws` ~> 5.36
   - `cyberark/conjur` ~> 0.8.1
-- A **CyberArk Conjur** tenant/appliance reachable from where you run Terraform,
+- A **Idira Conjur** tenant/appliance reachable from where you run Terraform,
   holding the AWS credentials this module uses.
 - A DNS server / domain controller reachable at `dc1_private_ip` (used in the VPC
   DHCP options set).

@@ -2,7 +2,7 @@
 # CCE Organization Outputs
 # ===========================
 output "org_onboarding_id" {
-  description = "The AWS Organization Onboarding ID from CyberArk CCE"
+  description = "The AWS Organization Onboarding ID from Idira CCE"
   value       = module.cce_aws_organization.org_onboarding_id
 }
 
@@ -53,7 +53,7 @@ output "stackset_id" {
 # Registered Accounts
 # ===========================
 output "registered_accounts" {
-  description = "Map of member accounts registered with CyberArk CCE"
+  description = "Map of member accounts registered with Idira CCE"
   value = {
     for id, account in idsec_cce_aws_organization_account.member_accounts :
     id => {

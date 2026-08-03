@@ -67,7 +67,7 @@ variable "foundation_state_key" {
 }
 
 # ===========================
-# CyberArk SSH Key Configuration
+# Idira SSH Key Configuration
 # ===========================
 variable "target_user" {
   description = "Linux user account for SSH key management"
@@ -76,7 +76,7 @@ variable "target_user" {
 }
 
 variable "connector_id" {
-  description = "CyberArk connector ID for SSH access"
+  description = "Idira connector ID for SSH access"
   type        = string
 }
 

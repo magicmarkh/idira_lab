@@ -1,0 +1,39 @@
+---
+# Build the lab OU tree, groups and demo users under the base OU.
+
+- name: Create base OU
+  microsoft.ad.ou:
+    name: "{{ dc_base_ou }}"
+    path: "{{ dc_domain_dn }}"
+    state: present
+
+- name: Create sub-OUs
+  microsoft.ad.ou:
+    name: "{{ item }}"
+    path: "OU={{ dc_base_ou }},{{ dc_domain_dn }}"
+    state: present
+  loop: "{{ dc_sub_ous }}"
+
+- name: Create groups
+  microsoft.ad.group:
+    name: "{{ item.name }}"
+    scope: "{{ item.scope }}"
+    description: "{{ item.description | default(omit) }}"
+    path: "OU=Groups,OU={{ dc_base_ou }},{{ dc_domain_dn }}"
+    state: present
+  loop: "{{ dc_groups }}"
+
+- name: Create demo users
+  microsoft.ad.user:
+    name: "{{ item.name }}"
+    sam_account_name: "{{ item.name }}"
+    upn: "{{ item.name }}@{{ dc_domain_fqdn }}"
+    display_name: "{{ item.display_name | default(item.name) }}"
+    password: "{{ dc_user_default_password }}"
+    path: "OU=Users,OU={{ dc_base_ou }},{{ dc_domain_dn }}"
+    groups:
+      add: "{{ item.groups | default([]) }}"
+    enabled: true
+    state: present
+  loop: "{{ dc_users }}"
+  no_log: true

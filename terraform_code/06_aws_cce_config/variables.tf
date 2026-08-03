@@ -98,7 +98,7 @@ variable "organization_root_id" {
 }
 
 variable "display_name" {
-  description = "Display name for the organization in CyberArk CCE"
+  description = "Display name for the organization in Idira CCE"
   type        = string
   default     = "My Org"
 }

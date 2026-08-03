@@ -1,0 +1,8 @@
+- name: Promote and configure the Active Directory domain controller
+  hosts: all
+  gather_facts: false
+  # All connection vars (host/port/user/password/transport) are supplied at
+  # runtime via the extra-vars file written by promote_via_ssm.sh, so the tunnel
+  # port (55985) and NTLM transport are defined in exactly one place.
+  roles:
+    - domain_controller

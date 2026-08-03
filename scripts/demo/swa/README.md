@@ -7,11 +7,11 @@ the node using the ec2 pem.
 ## Prerequisites
 
 1. The SWA layer is deployed — enable it in Terraform with the variables in
-   [`terraform_code/03_ec2_compute/swa.tfvars.example`](../../../terraform_code/03_ec2_compute/swa.tfvars.example)
+   [`terraform_code/04_ec2_compute/swa.tfvars.example`](../../../terraform_code/04_ec2_compute/swa.tfvars.example)
    then `terraform apply` (or run `ansible-playbook playbooks/setup_swa_workloads.yml`
    directly).
 2. The Secrets Manager side is applied
-   (`terraform_code/05_cyberark_config/secrets_manager_swa/apply_swa_policy.sh`).
+   (`terraform_code/03_idira_config/secrets_manager_swa/apply_swa_policy.sh`).
 
 ## Setup
 

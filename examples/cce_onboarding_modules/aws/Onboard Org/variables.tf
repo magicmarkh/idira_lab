@@ -29,7 +29,7 @@ variable "organization_root_id" {
 }
 
 variable "display_name" {
-  description = "The display name for the CCE organization in CyberArk Identity Security"
+  description = "The display name for the CCE organization in Idira Identity Security"
   type        = string
   default     = "My AWS Organization"
 }

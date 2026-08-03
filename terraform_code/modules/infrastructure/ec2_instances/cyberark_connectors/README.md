@@ -1,6 +1,6 @@
-# CyberArk Connectors Module
+# Idira Connectors Module
 
-Creates EC2 instances that run CyberArk connector software. These connectors integrate the lab environment with external CyberArk services for credential management.
+Creates EC2 instances that run Idira connector software. These connectors integrate the lab environment with external Idira services for credential management.
 
 ## Usage
 ```hcl
@@ -9,4 +9,4 @@ module "cyberark_connectors" {
   subnet_id = module.vpc.private_subnet_id
 }
 ```
-Grant the attached IAM role only the permissions required for the CyberArk connector to operate, following the principle of least privilege.
+Grant the attached IAM role only the permissions required for the Idira connector to operate, following the principle of least privilege.

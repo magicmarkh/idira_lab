@@ -1,0 +1,34 @@
+---
+# Orchestrator: assert inputs, then promote -> build AD content -> service
+# account -> baseline GPOs. The promote step reboots the host (via the
+# microsoft.ad.domain module) and reconnects before the AD-content steps run.
+
+- name: Assert required domain controller inputs are present
+  ansible.builtin.assert:
+    that:
+      - dc_domain_fqdn | length > 0
+      - dc_domain_netbios | length > 0
+      - dc_dsrm_password | length > 0
+      - dc_service_account_name | length > 0
+      - dc_service_account_password | length > 0
+    fail_msg: >-
+      Domain controller inputs missing. Supply dc_domain_fqdn, dc_domain_netbios,
+      dc_dsrm_password, dc_service_account_name and dc_service_account_password
+      (Terraform passes these via promote_via_ssm.sh).
+
+# Domain distinguished name derived once for reuse (murphyslab.local -> DC=murphyslab,DC=local)
+- name: Derive domain distinguished name
+  ansible.builtin.set_fact:
+    dc_domain_dn: "DC={{ dc_domain_fqdn | replace('.', ',DC=') }}"
+
+- name: Promote the forest
+  ansible.builtin.import_tasks: promote.yml
+
+- name: Build AD content (OUs, groups, users)
+  ansible.builtin.import_tasks: ad_content.yml
+
+- name: Create the domain-join service account
+  ansible.builtin.import_tasks: service_account.yml
+
+- name: Apply baseline GPOs
+  ansible.builtin.import_tasks: baseline_gpo.yml

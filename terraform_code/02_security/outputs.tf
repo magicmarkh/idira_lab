@@ -34,20 +34,33 @@ output "automation_user_arn" {
   value       = module.create_automation_user.iam_user_arn
 }
 
-output "automation_access_key_id" {
-  description = "Access key ID for the automation user"
-  value       = module.create_automation_user.access_key_id
-}
-
 # =====================================================================
-# CyberArk Vaulting Outputs
+# Idira Vaulting Outputs
 # =====================================================================
 output "automation_safe_name" {
-  description = "Name of the CyberArk safe holding the automation AWS access key"
-  value       = idsec_pcloud_safe.automation.safe_name
+  description = "Name of the Idira safe holding the automation AWS access key"
+  value       = module.safe.safe_name
 }
 
 output "automation_account_id" {
-  description = "CyberArk account ID for the vaulted automation AWS access key"
+  description = "Idira account ID for the vaulted automation AWS access key"
   value       = idsec_pcloud_account.automation.account_id
+}
+
+# =====================================================================
+# Key Pair Outputs
+# =====================================================================
+output "key_name" {
+  description = "Name of the AWS EC2 SSH key pair (consumed by 04_ec2_compute via remote state)"
+  value       = aws_key_pair.server.key_name
+}
+
+output "keypair_safe_name" {
+  description = "Name of the Idira safe holding the AWS EC2 private key"
+  value       = module.keypair_safe.safe_name
+}
+
+output "keypair_account_id" {
+  description = "Idira account ID for the vaulted AWS EC2 private key"
+  value       = idsec_pcloud_account.keypair.account_id
 }

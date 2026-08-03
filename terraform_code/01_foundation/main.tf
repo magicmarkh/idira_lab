@@ -16,7 +16,6 @@ module "vpc" {
 
 module "s3_bucket" {
   source           = "./s3_bucket"
-  region           = var.region
   asset_owner_name = var.asset_owner_name
   bucket_name      = "mh-tf-west-lab"
 }

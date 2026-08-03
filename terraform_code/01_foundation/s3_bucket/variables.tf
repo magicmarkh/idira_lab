@@ -1,5 +1,3 @@
-variable "region" {}
-
 variable "asset_owner_name" {}
 
 variable "vpc_state_file_path" {

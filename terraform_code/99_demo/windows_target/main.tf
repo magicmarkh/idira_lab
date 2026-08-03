@@ -1,12 +1,12 @@
 # =====================================================================
-# Demo Windows Target with CyberArk Password Vaulting
+# Demo Windows Target with Idira Password Vaulting
 #
 # This is a self-contained demonstration that shows:
 # 1. Deploying a Windows EC2 instance
 # 2. Setting a secure local Administrator password
 # 3. Joining to Active Directory domain
-# 4. Creating a CyberArk safe
-# 5. Vaulting the Administrator password in CyberArk
+# 4. Creating a Idira safe
+# 5. Vaulting the Administrator password in Idira
 #
 # All components are in this single file for easy demonstration.
 # =====================================================================
@@ -61,7 +61,7 @@ data "conjur_secret" "identity_client_secret" {
 # Provider: AWS
 # =====================================================================
 provider "aws" {
-  region     = var.region
+  region = var.region
   # When using API auth, AWS creds come from Conjur secrets.
   # When using IAM auth, these are null and the provider uses the EC2 instance profile.
   access_key = one(data.conjur_secret.aws_access_key[*].value)
@@ -69,7 +69,7 @@ provider "aws" {
 }
 
 # =====================================================================
-# Provider: CyberArk Identity Security (IDSec)
+# Provider: Idira Identity Security (IDSec)
 # =====================================================================
 provider "idsec" {
   auth_method   = "identity_service_user"
@@ -163,7 +163,7 @@ resource "aws_instance" "demo_target" {
   tags = {
     Name                 = "${var.team_name}-${var.hostname}"
     I_Owner              = var.asset_owner_name
-    I_Purpose            = "Demo Windows Target - CyberArk Password Vaulting"
+    I_Purpose            = "Demo Windows Target - Idira Password Vaulting"
     CA_iScheduler        = var.iScheduler
     CA_iSchedulerControl = "yes"
   }
@@ -287,24 +287,24 @@ EOT
 
 
 # =====================================================================
-# CyberArk Safe: For storing the Administrator password
+# Idira Safe: For storing the Administrator password
 # =====================================================================
 resource "idsec_pcloud_safe" "demo_target_safe" {
   safe_name                = var.safe_name
   description              = var.safe_description
   number_of_days_retention = var.safe_retention_days
 
-  depends_on = [aws_instance.demo_target]  # Ensure instance creation is successful before creating a safe to vault account
+  depends_on = [aws_instance.demo_target] # Ensure instance creation is successful before creating a safe to vault account
 }
 
 # =====================================================================
-# CyberArk Account: Vault the Administrator password
+# Idira Account: Vault the Administrator password
 # =====================================================================
 resource "idsec_pcloud_account" "demo_target_admin" {
   platform_id = var.platform_id
   username    = "Administrator"
   address     = "${var.hostname}.${var.domain_name}"
-  secret      = random_password.admin_password.result  # Actual password set on the server
+  secret      = random_password.admin_password.result # Actual password set on the server
   safe_name   = idsec_pcloud_safe.demo_target_safe.safe_name
   name        = "${var.hostname}-admin"
 
@@ -312,11 +312,11 @@ resource "idsec_pcloud_account" "demo_target_admin" {
 
   lifecycle {
     ignore_changes = [
-      secret,                         # CPM rotates passwords after initial creation
-      name,                           # CyberArk manages naming
-      account_id,                     # Assigned by CyberArk
-      secret_type,                    # Computed by CyberArk
-      platform_account_properties    # Platform-specific settings
+      secret,                     # CPM rotates passwords after initial creation
+      name,                       # Idira manages naming
+      account_id,                 # Assigned by Idira
+      secret_type,                # Computed by Idira
+      platform_account_properties # Platform-specific settings
     ]
   }
 }
