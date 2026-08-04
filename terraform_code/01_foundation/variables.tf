@@ -65,6 +65,20 @@ variable "dc1_private_ip" {
 }
 
 # ===========================
+# State Bucket Access
+# ===========================
+# The mh-tf-west-lab bucket is the shared Terraform state store. Its bucket
+# policy denies any request that is neither from one of these public IPs nor
+# through the VPC's S3 gateway endpoint. Expand this list to grant more IPs
+# (e.g. add the NAT gateway EIP for in-VPC-over-NAT access, or a teammate's IP),
+# then re-apply this layer.
+variable "state_allowed_ips" {
+  description = "Public IP CIDRs allowed to reach the Terraform state bucket. Expandable."
+  type        = list(string)
+  default     = ["134.238.168.126/32"]
+}
+
+# ===========================
 # Conjur Variables
 # ===========================
 variable "conjur_appliance_url" {

@@ -25,6 +25,7 @@ TERRAFORM_CODE_DIRS=(
     "04_ec2_compute"
     "05_rds_databases"
     "06_aws_cce_config"
+    "98_dev"
     "99_demo/windows_target"
     "99_demo/linux_target"
     # Deferred idira_config sub-states (users, accounts/*, sia_settings,

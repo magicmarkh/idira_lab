@@ -34,7 +34,7 @@ variable "asset_owner_name" {
 variable "iScheduler" {
   description = "Nightly shutdown schedule tag for the instance"
   type        = string
-  default     = "US_E_office"
+  default     = "US_W_office"
 }
 
 # ---------------------------------------------------------------------
@@ -184,6 +184,23 @@ variable "dc_secrets_safe_members" {
   default = {}
 }
 
+variable "service_accounts_safe_name" {
+  description = "Name of the Idira safe that holds domain service accounts (svc-domain-joiner, etc.)"
+  type        = string
+}
+
+variable "service_accounts_safe_members" {
+  description = "Map of members to add to the service-accounts safe (include a 'Conjur Sync' member to trigger Secrets Hub replication into Conjur)"
+  type = map(object({
+    member_name                = string
+    member_type                = string
+    search_in                  = optional(string)
+    membership_expiration_date = optional(number)
+    permission_set             = string
+  }))
+  default = {}
+}
+
 variable "domain_admin_platform_id" {
   description = "Idira platform ID for the Domain Administrator account (managed Windows-Domain platform)"
   type        = string
@@ -224,7 +241,6 @@ variable "domain_join_account_name" {
 #   - Iteration 2: CyberArk connectors + Conjur-backed domain-join creds
 #   - Iteration 3: targets + kind node (+ SWA layer)
 # =====================================================================
-/*
 # ---- Iteration 2: CyberArk connectors --------------------------------
 variable "connector_1_private_ip" {
   description = "private ip of connector 1 (e.g. 192.168.20.20)"
@@ -276,6 +292,36 @@ variable "conjur_domain_join_password_path" {
 # (conjur_aws_pem_key_path is declared above, outside this block — the DC uses it
 #  in Iteration 1 to decrypt the EC2-generated Administrator password.)
 
+# ---- Iteration 2: connector domain-join (SSM) + local-admin vaulting -
+variable "domain_ou_path" {
+  description = "Optional AD OU path for the connector computer object (e.g. OU=Servers,DC=example,DC=local)"
+  type        = string
+  default     = ""
+}
+
+variable "connector_safe_name" {
+  description = "Name of the Idira safe that holds the connector's local Administrator account"
+  type        = string
+}
+
+variable "connector_safe_description" {
+  description = "Description for the connector local-admin safe"
+  type        = string
+  default     = "Windows CyberArk Connector - Local Administrator Account"
+}
+
+variable "connector_safe_retention_days" {
+  description = "Number of days of version retention on the connector safe"
+  type        = number
+  default     = 0
+}
+
+variable "connector_local_admin_platform_id" {
+  description = "Idira platform ID for the connector's local Administrator account"
+  type        = string
+}
+
+/*
 # ---- Iteration 3: targets --------------------------------------------
 variable "linux_target_1_private_ip" {
   description = "private ip of linux target 1 (e.g. 192.168.20.40)"

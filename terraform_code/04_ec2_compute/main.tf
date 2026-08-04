@@ -47,10 +47,12 @@ data "aws_ami" "windows_2022_latest" {
 # REMOTE STATE - Foundation Layer
 # =====================================================================
 data "terraform_remote_state" "foundation" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../01_foundation/terraform.tfstate"
+    bucket = "mh-tf-west-lab"
+    key    = "state/01_foundation.tfstate"
+    region = "us-west-2"
   }
 }
 
@@ -58,10 +60,12 @@ data "terraform_remote_state" "foundation" {
 # REMOTE STATE - Security Layer
 # =====================================================================
 data "terraform_remote_state" "security" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../02_security/terraform.tfstate"
+    bucket = "mh-tf-west-lab"
+    key    = "state/02_security.tfstate"
+    region = "us-west-2"
   }
 }
 
@@ -97,28 +101,21 @@ module "dc" {
   security_group_ids = [
     data.terraform_remote_state.foundation.outputs.rdp_internal_flat_sg_id,
     data.terraform_remote_state.foundation.outputs.domain_controller_sg_id,
-    # WinRM SG is not required for the SSM port-forward path, but is kept for the
-    # in-VPC connector join path re-enabled in Iteration 2.
+    # WinRM SG: the in-VPC Terraform host reaches the DC directly on 5985 to run
+    # the Ansible promotion (winrm_internal_flat allows 5985 from internal subnets).
     data.terraform_remote_state.foundation.outputs.winrm_internal_flat_sg_id,
   ]
   private_ip        = var.dc1_private_ip
   private_subnet_id = data.terraform_remote_state.foundation.outputs.private_subnet_id
 
-  # SSM-enabled instance profile so the agent can register (port-forward driver).
+  # Instance profile attached to the DC (retains break-glass SSM access; the Ansible
+  # promotion connects directly over WinRM, not via SSM).
   iam_instance_profile = data.terraform_remote_state.security.outputs.ec2_tf_automation_instance_profile_name
 
   # Domain build inputs (consumed by the Ansible domain_controller role).
-  region               = var.region
   domain_name          = var.domain_name
   domain_netbios       = var.domain_netbios
   service_account_name = var.domain_join_username_bootstrap
-
-  # AWS creds for the promotion local-exec (aws ssm start-session). In API mode
-  # these are the same Conjur-sourced automation-user creds the AWS provider uses,
-  # so the tunnel never depends on the operator's (often-stale) ambient shell
-  # credentials. Empty in IAM mode -> the script falls back to the instance role.
-  aws_access_key_id     = var.conjur_authn_type == "api" ? data.conjur_secret.aws_access_key[0].value : ""
-  aws_secret_access_key = var.conjur_authn_type == "api" ? data.conjur_secret.aws_secret_key[0].value : ""
 
   # EC2 key pair private key (from Conjur). Terraform decrypts the EC2-generated
   # Administrator password with it (rsadecrypt) to feed both promotion and vaulting.
@@ -129,6 +126,11 @@ module "dc" {
   dc_secrets_safe_name    = var.dc_secrets_safe_name
   dc_secrets_safe_members = var.dc_secrets_safe_members
 
+  # Separate safe for domain service accounts (svc-domain-joiner) consumed by the
+  # connector's Ansible domain join.
+  service_accounts_safe_name    = var.service_accounts_safe_name
+  service_accounts_safe_members = var.service_accounts_safe_members
+
   domain_admin_platform_id  = var.domain_admin_platform_id
   domain_admin_account_name = var.domain_admin_account_name
   dsrm_platform_id          = var.dsrm_platform_id
@@ -137,9 +139,13 @@ module "dc" {
   domain_join_account_name  = var.domain_join_account_name
 }
 
-/* ITERATION 1 (DC only): connectors are disabled. Re-enable in Iteration 2.
 module "cyberark_connectors" {
-  source           = "./ec2_instances/cyberark_connectors"
+  source = "./ec2_instances/cyberark_connectors"
+  # The connector joins the domain the DC builds and reads domain-join creds the DC
+  # vaults into Conjur, so the entire DC module (promotion + AD content + warm-up)
+  # must complete before the connector starts.
+  depends_on = [module.dc]
+
   vpc_id           = data.terraform_remote_state.foundation.outputs.vpc_id
   team_name        = var.team_name
   asset_owner_name = var.asset_owner_name
@@ -157,7 +163,11 @@ module "cyberark_connectors" {
   sia_aws_connector_1_private_ip = var.sia_aws_connector_1_private_ip
   windows_connector_hostname     = var.windows_connector_hostname
 
-  # Linux connector variables
+  # Instance profile attached to the connector (retains break-glass SSM access; the
+  # Ansible domain join connects directly over WinRM). Same profile as the DC.
+  iam_instance_profile = data.terraform_remote_state.security.outputs.ec2_tf_automation_instance_profile_name
+
+  # Linux connector variables (Windows-only deploy -> count 0 in tfvars)
   linux_ami_id                    = local.linux_ami_id
   linux_security_group_ids        = data.terraform_remote_state.foundation.outputs.ssh_internal_flat_sg_id
   linux_connector_count           = var.linux_connector_count
@@ -165,13 +175,21 @@ module "cyberark_connectors" {
   linux_connector_name_prefix     = var.linux_connector_name_prefix
   private_key_contents            = data.conjur_secret.aws_pem_key.value
 
-  #connector3 testing
+  # Domain join (Improvement #2, direct WinRM) + SIA connector (Improvement #3)
   domain_name          = var.domain_name
+  domain_ou_path       = var.domain_ou_path
   domain_join_username = data.conjur_secret.domain_join_username.value
   domain_join_password = data.conjur_secret.domain_join_password.value
   connector_pool_id    = data.terraform_remote_state.idira_connector_pools.outputs.connector_manager_pool_id
+
+  # Local Administrator vaulting (Improvement #1)
+  connector_safe_name               = var.connector_safe_name
+  connector_safe_description        = var.connector_safe_description
+  connector_safe_retention_days     = var.connector_safe_retention_days
+  connector_local_admin_platform_id = var.connector_local_admin_platform_id
 }
 
+/* ITERATION 1 (DC only): targets + kind_node remain disabled. Re-enable later.
 module "targets" {
   source                                  = "./ec2_instances/targets"
   vpc_id                                  = data.terraform_remote_state.foundation.outputs.vpc_id

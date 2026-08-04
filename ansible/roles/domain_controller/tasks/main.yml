@@ -14,7 +14,8 @@
     fail_msg: >-
       Domain controller inputs missing. Supply dc_domain_fqdn, dc_domain_netbios,
       dc_dsrm_password, dc_service_account_name and dc_service_account_password
-      (Terraform passes these via promote_via_ssm.sh).
+      (Terraform's promote_dc local-exec passes these as DC_* env vars, read via
+      lookup('env', ...) in setup_domain_controller.yml).
 
 # Domain distinguished name derived once for reuse (murphyslab.local -> DC=murphyslab,DC=local)
 - name: Derive domain distinguished name

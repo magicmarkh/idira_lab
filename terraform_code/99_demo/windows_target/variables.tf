@@ -171,6 +171,12 @@ variable "conjur_aws_secret_key_path" {
   default     = "data/your/conjur/path"
 }
 
+variable "conjur_aws_pem_key_path" {
+  description = "Conjur secret path for the EC2 key pair PEM (used to decrypt the EC2-generated Administrator password)"
+  type        = string
+  default     = "data/your/conjur/path"
+}
+
 variable "conjur_authn_type" {
   description = "Conjur auth method: 'api' for API key (laptop), 'iam' for AWS IAM (EC2)"
   type        = string

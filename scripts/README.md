@@ -7,6 +7,7 @@ These scripts manage terraform.tfvars and backend.tf files using S3 as a central
 - **pull_tfvars.sh** - Download configuration from S3 to local directories
 - **push_tfvars.sh** - Upload configuration to S3 (with secrets removed)
 - **set_secrets.sh** - Populate Conjur credentials locally
+- **tf_init_backend.sh** - Point every layer at the shared S3 state backend (init / migrate / reconfigure)
 - **config.sh** - Shared configuration (do not execute directly)
 
 ## Prerequisites
@@ -75,6 +76,52 @@ If you need to update your Conjur credentials in all files:
 ./scripts/set_secrets.sh
 ```
 
+## Terraform State Backend (S3)
+
+All Terraform layers store their state in the **`mh-tf-west-lab`** S3 bucket
+(region `us-west-2`), with native S3 state locking (`use_lockfile`, no DynamoDB).
+Each layer's `backend.tf` sets a distinct `key` (e.g. `state/01_foundation.tfstate`),
+and cross-layer reads use `data.terraform_remote_state` pointed at the matching key.
+
+> Note: the state bucket (`mh-tf-west-lab`) is separate from the tfvars-sync bucket
+> (`us-ent-east`) used by `pull_tfvars.sh`/`push_tfvars.sh`. The state bucket is
+> created and hardened by `01_foundation` (`module.s3_bucket`): versioning, encryption,
+> public-access-block, and an IP-allowlist policy (`state_allowed_ips`) plus a VPC S3
+> gateway-endpoint exception for in-VPC runs.
+
+### First-time cutover (local -> S3)
+
+Because `01_foundation` creates the very bucket that holds its state, bootstrap it once:
+
+```bash
+# 1. Create the bucket while 01_foundation is still on a local backend, then
+#    switch its backend.tf to S3 and migrate its state up:
+cd terraform_code/01_foundation
+#    (backend.tf ships already set to S3 — for a clean bootstrap, temporarily set
+#     it back to `backend "local" {}`, `terraform apply`, then restore the S3 block.)
+terraform init -migrate-state
+
+# 2. Migrate every remaining layer from local state to S3 in one pass:
+./scripts/tf_init_backend.sh --migrate
+```
+
+### Day-to-day
+
+```bash
+./scripts/tf_init_backend.sh                # init/pull all layers from S3
+./scripts/tf_init_backend.sh 04_ec2_compute # only matching layer(s)
+./scripts/tf_init_backend.sh --reconfigure  # re-point backend, ignore local cache
+```
+
+Requires AWS credentials from an **allowed IP** (`state_allowed_ips` in
+`01_foundation`) or from inside the VPC (via the S3 gateway endpoint). To grant a
+new IP, append it to `state_allowed_ips` and re-apply `01_foundation`.
+
+> Because `backend.tf` is git-ignored (see [Git Integration](#git-integration)),
+> the S3 backend blocks are shared through `push_tfvars.sh`/`pull_tfvars.sh` — run
+> `push_tfvars.sh` after the cutover so teammates `pull_tfvars.sh` the same backend
+> config.
+
 ## Script Details
 
 ### pull_tfvars.sh
@@ -141,6 +188,7 @@ The scripts manage these terraform_code modules:
 - `04_ec2_compute`
 - `05_rds_databases`
 - `06_aws_cce_config`
+- `98_dev`
 - `99_demo/windows_target`
 - `99_demo/linux_target`
 
@@ -182,6 +230,9 @@ s3://us-ent-east/tfvars-config/
 │   │   ├── terraform.tfvars
 │   │   └── backend.tf
 │   ├── 06_aws_cce_config/
+│   │   ├── terraform.tfvars
+│   │   └── backend.tf
+│   ├── 98_dev/
 │   │   ├── terraform.tfvars
 │   │   └── backend.tf
 │   └── 99_demo/

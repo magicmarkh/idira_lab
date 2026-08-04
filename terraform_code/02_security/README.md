@@ -4,8 +4,8 @@ Security layer of the lab. Creates the automation IAM identity and vaults its
 AWS access key in Idira Privilege Cloud, plus the EC2 Terraform-automation
 IAM role.
 
-Depends on `01_foundation` (consumed via `terraform_remote_state`, local
-backend, relative path to `../01_foundation/terraform.tfstate`).
+Depends on `01_foundation` (consumed via `terraform_remote_state` from the shared
+S3 backend, key `state/01_foundation.tfstate`).
 
 ## What it creates
 

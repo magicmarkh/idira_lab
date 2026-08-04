@@ -4,11 +4,9 @@
 # These data sources retrieve secrets from Conjur that can be used
 # across multiple EC2 instance types (connectors, targets, etc.)
 
-# Domain join credentials
-# ITERATION 1 (DC only): connectors are disabled, and on a from-scratch build these
-# Conjur paths do not exist yet (the service account is created during the DC build).
-# Re-enable in Iteration 2, count-gated on the domain_join_bootstrap toggle.
-/*
+# Domain join credentials (Iteration 2). The svc-domain-joiner account is created
+# and vaulted during the DC build, so these Conjur paths exist by the time the
+# connector module consumes them.
 data "conjur_secret" "domain_join_username" {
   name = var.conjur_domain_join_username_path
 }
@@ -16,7 +14,6 @@ data "conjur_secret" "domain_join_username" {
 data "conjur_secret" "domain_join_password" {
   name = var.conjur_domain_join_password_path
 }
-*/
 
 # Identity credentials
 data "conjur_secret" "identity_client_id" {
@@ -60,14 +57,14 @@ data "conjur_secret" "swa_agent_enrollment_token" {
 # Remote State Data Sources
 # =====================================================================
 
-# Data source to reference Idira connector pools outputs
-# ITERATION 1 (DC only): only used by the connectors module. Re-enable in Iteration 2.
-/*
+# Data source to reference Idira connector pools outputs (Iteration 2). The pool is
+# created in 03_idira_config/connector_pools and consumed by the connector module.
 data "terraform_remote_state" "idira_connector_pools" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../03_idira_config/connector_pools/terraform.tfstate"
+    bucket = "mh-tf-west-lab"
+    key    = "state/03_connector_pools.tfstate"
+    region = "us-west-2"
   }
 }
-*/

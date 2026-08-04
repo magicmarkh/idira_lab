@@ -9,3 +9,9 @@ collections:
     version: ">=2.5.0,<3.0.0"
   - name: community.windows
     version: ">=2.3.0,<3.0.0"
+  # Required on the control node for the community.aws.aws_ssm connection plugin
+  # (used by 98_dev to provision the mh_dev host over SSM instead of SSH).
+  - name: amazon.aws
+    version: ">=8.0.0,<10.0.0"
+  - name: community.aws
+    version: ">=8.0.0,<10.0.0"

@@ -32,6 +32,11 @@ variable "key_name" {
   description = "The name of the AWS key pair to use for the instance"
 }
 
+variable "iam_instance_profile" {
+  description = "Instance profile attached to the connector (retains break-glass SSM access; the Ansible domain join connects directly over WinRM)"
+  type        = string
+}
+
 # ===========================
 # Linux Connector Variables
 # ===========================
@@ -93,4 +98,38 @@ variable "domain_join_password" {
   description = "Domain join password from Conjur"
   type        = string
   sensitive   = true
+}
+
+# ===========================
+# Domain Join (Improvement #2)
+# ===========================
+variable "domain_ou_path" {
+  description = "Optional AD OU path for the connector computer object (e.g. OU=Servers,DC=example,DC=local)"
+  type        = string
+  default     = ""
+}
+
+# ===========================
+# Local Administrator Vaulting (Improvement #1)
+# ===========================
+variable "connector_safe_name" {
+  description = "Name of the Idira safe that holds the connector's local Administrator account"
+  type        = string
+}
+
+variable "connector_safe_description" {
+  description = "Description for the connector local-admin safe"
+  type        = string
+  default     = "Windows CyberArk Connector - Local Administrator Account"
+}
+
+variable "connector_safe_retention_days" {
+  description = "Number of days of version retention on the connector safe"
+  type        = number
+  default     = 0
+}
+
+variable "connector_local_admin_platform_id" {
+  description = "Idira platform ID for the connector's local Administrator account"
+  type        = string
 }

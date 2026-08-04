@@ -28,9 +28,23 @@ module "dc_secrets_safe" {
   source = "../../../modules/idira/safe"
 
   safe_name      = var.dc_secrets_safe_name
-  description    = "Domain controller privileged accounts (Domain Admin, DSRM, domain-join)"
+  description    = "Domain controller privileged accounts (Domain Admin, DSRM)"
   retention_days = 7
   members        = var.dc_secrets_safe_members
+}
+
+# ---------------------------------------------------------------------
+# Safe (+ members) for domain service accounts (svc-domain-joiner, etc.)
+# Kept separate from the DC-secrets safe so service accounts consumed by other
+# layers (e.g. the connector's Ansible domain join) have their own scope.
+# ---------------------------------------------------------------------
+module "service_accounts_safe" {
+  source = "../../../modules/idira/safe"
+
+  safe_name      = var.service_accounts_safe_name
+  description    = "Domain service accounts (domain-join, etc.)"
+  retention_days = 7
+  members        = var.service_accounts_safe_members
 }
 
 # ---------------------------------------------------------------------
@@ -87,7 +101,7 @@ resource "idsec_pcloud_account" "domain_join_svc" {
   username    = var.service_account_name
   address     = var.domain_name
   secret      = random_password.domain_join.result
-  safe_name   = module.dc_secrets_safe.safe_name
+  safe_name   = module.service_accounts_safe.safe_name
   name        = var.domain_join_account_name
 
   lifecycle {
@@ -99,5 +113,5 @@ resource "idsec_pcloud_account" "domain_join_svc" {
     ]
   }
 
-  depends_on = [module.dc_secrets_safe, null_resource.promote_dc]
+  depends_on = [module.service_accounts_safe, null_resource.promote_dc]
 }

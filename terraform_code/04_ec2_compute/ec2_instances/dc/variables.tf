@@ -16,13 +16,8 @@ variable "windows_instance_type" {
   default     = "t3a.large"
 }
 
-variable "region" {
-  description = "AWS region (used for the SSM start-session port-forward call)"
-  type        = string
-}
-
 variable "iam_instance_profile" {
-  description = "Instance profile granting the DC SSM access (AmazonSSMManagedInstanceCore)"
+  description = "Instance profile attached to the DC (retains break-glass SSM access; not used for the Ansible connection)"
   type        = string
 }
 
@@ -34,30 +29,13 @@ variable "domain_name" {
 variable "domain_netbios" {
   description = "NetBIOS name of the AD domain (e.g. MURPHYSLAB)"
   type        = string
-  default     = "MURPHYSLAB"
+  default     = "YourNetBiosName"
 }
 
 variable "service_account_name" {
   description = "sAMAccountName for the domain-join service account created in AD during the build"
   type        = string
   default     = "svc-domain-joiner"
-}
-
-# AWS credentials for the promotion local-exec's `aws ssm start-session` call.
-# Passed from the root module (Conjur-sourced in API mode). Left empty in IAM
-# mode, in which case the script uses the ambient chain (the EC2 instance role).
-variable "aws_access_key_id" {
-  description = "AWS access key id for the SSM port-forward call (empty = use ambient/instance-role creds)"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "aws_secret_access_key" {
-  description = "AWS secret access key for the SSM port-forward call (empty = use ambient/instance-role creds)"
-  type        = string
-  default     = ""
-  sensitive   = true
 }
 
 # EC2 key pair private key (PEM), sourced from Conjur by the root module. Used by
@@ -79,6 +57,23 @@ variable "dc_secrets_safe_name" {
 
 variable "dc_secrets_safe_members" {
   description = "Map of members to add to the DC-secrets safe (include a 'Conjur Sync' member to trigger Secrets Hub replication into Conjur)"
+  type = map(object({
+    member_name                = string
+    member_type                = string
+    search_in                  = optional(string)
+    membership_expiration_date = optional(number)
+    permission_set             = string
+  }))
+  default = {}
+}
+
+variable "service_accounts_safe_name" {
+  description = "Name of the Idira safe that holds domain service accounts (svc-domain-joiner, etc.)"
+  type        = string
+}
+
+variable "service_accounts_safe_members" {
+  description = "Map of members to add to the service-accounts safe (include a 'Conjur Sync' member to trigger Secrets Hub replication into Conjur)"
   type = map(object({
     member_name                = string
     member_type                = string

@@ -1,12 +1,27 @@
 - name: Onboard Windows Connector
   hosts: all
-  gather_facts: no
-  connection: winrm
+  gather_facts: false
+  # Connection + role values are injected by Terraform's join_domain local-exec via
+  # environment variables and read here with lookup('env', ...). The inventory host is
+  # the connector's private IP (Terraform runs inside the VPC); we connect directly
+  # over WinRM (no SSM tunnel). NTLM (not basic) works for the local Administrator both
+  # before and after the domain-join reboot; message_encryption:never matches the
+  # AllowUnencrypted=true listener set in user_data.
   vars:
-    ansible_port: 5985
+    ansible_user: Administrator
+    ansible_password: "{{ lookup('env', 'CONNECTOR_ADMIN_PASSWORD') }}"
     ansible_connection: winrm
-    ansible_winrm_transport: basic
+    ansible_port: 5985
+    ansible_winrm_scheme: http
+    ansible_winrm_transport: ntlm
+    ansible_winrm_message_encryption: never
     ansible_winrm_server_cert_validation: ignore
+    hostname: "{{ lookup('env', 'CONNECTOR_HOSTNAME') }}"
+    domain_name: "{{ lookup('env', 'DOMAIN_NAME') }}"
+    domain_join_username: "{{ lookup('env', 'DOMAIN_JOIN_USERNAME') }}"
+    domain_join_password: "{{ lookup('env', 'DOMAIN_JOIN_PASSWORD') }}"
+    # Empty env var -> omit so win_domain_membership uses the default Computers container.
+    domain_ou_path: "{{ lookup('env', 'DOMAIN_OU_PATH') or omit }}"
 
   roles:
     - windows_connector

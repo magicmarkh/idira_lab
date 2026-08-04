@@ -57,6 +57,12 @@ data "conjur_secret" "identity_client_secret" {
   name = var.conjur_identity_client_secret_path
 }
 
+# EC2 key pair private key (PEM), vaulted in Conjur. Used to decrypt the
+# EC2-generated local Administrator password (rsadecrypt on password_data).
+data "conjur_secret" "aws_pem_key" {
+  name = var.conjur_aws_pem_key_path
+}
+
 # =====================================================================
 # Provider: AWS
 # =====================================================================
@@ -81,18 +87,22 @@ provider "idsec" {
 # Data Sources: Remote State (Foundation and Security Layers)
 # =====================================================================
 data "terraform_remote_state" "foundation" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../../01_foundation/terraform.tfstate"
+    bucket = "mh-tf-west-lab"
+    key    = "state/01_foundation.tfstate"
+    region = "us-west-2"
   }
 }
 
 data "terraform_remote_state" "security" {
-  backend = "local"
+  backend = "s3"
 
   config = {
-    path = "../../02_security/terraform.tfstate"
+    bucket = "mh-tf-west-lab"
+    key    = "state/02_security.tfstate"
+    region = "us-west-2"
   }
 }
 
@@ -113,15 +123,6 @@ data "aws_ami" "windows_2022" {
 }
 
 # =====================================================================
-# Random Password for Local Administrator
-# =====================================================================
-resource "random_password" "admin_password" {
-  length           = 24
-  special          = true
-  override_special = "!@#%^*()-_=+[]{}"
-}
-
-# =====================================================================
 # EC2 Instance: Windows Server 2022
 # =====================================================================
 resource "aws_instance" "demo_target" {
@@ -129,20 +130,19 @@ resource "aws_instance" "demo_target" {
   instance_type               = var.instance_type
   subnet_id                   = data.terraform_remote_state.foundation.outputs.private_subnet_id
   associate_public_ip_address = false
+  key_name                    = data.terraform_remote_state.security.outputs.key_name
+  get_password_data           = true
   vpc_security_group_ids = [
     data.terraform_remote_state.foundation.outputs.rdp_internal_flat_sg_id,
     data.terraform_remote_state.foundation.outputs.winrm_internal_flat_sg_id,
     data.terraform_remote_state.foundation.outputs.sia_windows_target_sg_id
   ]
 
-  # User data: Set password and enable WinRM
+  # User data: enable WinRM. The Administrator password is left to EC2Launch,
+  # which generates it and encrypts it with the key pair's public key; Terraform
+  # decrypts it with the Conjur-vaulted PEM (get_password_data / rsadecrypt).
   user_data = <<-EOT
     <powershell>
-    # Set known local Administrator password via EC2Launch
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Amazon\Ec2Launch\Settings" -Name "Password" -Value "Set"
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Amazon\Ec2Launch\Settings" -Name "Random" -Value 0
-    Set-LocalUser -Name "Administrator" -Password (ConvertTo-SecureString "${random_password.admin_password.result}" -AsPlainText -Force)
-
     # Enable WinRM (HTTP for lab)
     Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value $true
     Set-Item WSMan:\localhost\Service\Auth\Basic -Value $true
@@ -177,12 +177,17 @@ resource "aws_instance" "demo_target" {
 # Local Values: Escaped passwords for shell commands
 # =====================================================================
 locals {
+  # EC2 generates the Administrator password and encrypts it with the key pair's
+  # public key; we decrypt it in Terraform with the Conjur-vaulted PEM so the same
+  # value drives the Ansible domain-join and the Idira vault account.
+  admin_password = rsadecrypt(aws_instance.demo_target.password_data, data.conjur_secret.aws_pem_key.value)
+
   # Escape special characters in passwords for safe shell interpolation
   # This handles double quotes, backslashes, and dollar signs
   admin_password_escaped = replace(
     replace(
       replace(
-        replace(random_password.admin_password.result, "\\", "\\\\"),
+        replace(local.admin_password, "\\", "\\\\"),
         "\"", "\\\""
       ),
       "$", "\\$"
@@ -304,7 +309,7 @@ resource "idsec_pcloud_account" "demo_target_admin" {
   platform_id = var.platform_id
   username    = "Administrator"
   address     = "${var.hostname}.${var.domain_name}"
-  secret      = random_password.admin_password.result # Actual password set on the server
+  secret      = local.admin_password # EC2-generated Administrator password, decrypted via the vaulted PEM
   safe_name   = idsec_pcloud_safe.demo_target_safe.safe_name
   name        = "${var.hostname}-admin"
 

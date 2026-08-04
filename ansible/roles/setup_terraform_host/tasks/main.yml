@@ -20,6 +20,10 @@
     name: pip
     state: latest
     executable: pip3
+    # On AL2023 pip is installed via rpm and has no RECORD file, so a normal
+    # `pip install -U pip` fails trying to uninstall it. --ignore-installed
+    # installs the newer pip into site-packages without removing the rpm copy.
+    extra_args: "--ignore-installed"
   become: yes
 
 - name: Install Ansible via pip
@@ -47,10 +51,21 @@
     executable: pip3
   become: yes
 
-- name: Install required Ansible collections (microsoft.ad, ansible.windows, community.windows)
+- name: Stage requirements.yml on the host
+  # ansible.builtin.command runs on the REMOTE host, so {{ playbook_dir }} (a
+  # control-node path) is not readable there. Copy the file to the box first,
+  # then install from the local copy.
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../requirements.yml"
+    dest: /tmp/requirements.yml
+    mode: "0644"
+
+- name: Install required Ansible collections (microsoft.ad, ansible.windows, community.windows, amazon.aws, community.aws)
   ansible.builtin.command: >-
-    ansible-galaxy collection install -r {{ playbook_dir }}/../requirements.yml
+    ansible-galaxy collection install -r /tmp/requirements.yml
+    -p /usr/share/ansible/collections
   changed_when: true
+  become: yes
 
 - name: Add HashiCorp yum repository
   ansible.builtin.yum_repository:

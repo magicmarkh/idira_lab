@@ -1,10 +1,11 @@
 # =====================================================================
-# Domain Controller — instance + WinRM bootstrap + SSM-driven promotion
+# Domain Controller — instance + WinRM bootstrap + direct Ansible promotion
 # =====================================================================
-# The DC lives in a private subnet with no public IP. We bootstrap WinRM
-# (HTTP 5985) via user_data, then reach it from outside the VPC through an
-# AWS SSM port-forwarding tunnel to run the Ansible domain_controller role
-# (see scripts/promote_via_ssm.sh and ../../../ansible).
+# The DC lives in a private subnet. We bootstrap WinRM (HTTP 5985) via
+# user_data, then run the Ansible domain_controller role directly against the
+# private IP over WinRM. Terraform is expected to run from inside the VPC (the
+# winrm_internal_flat SG allows 5985 from internal subnets), so no tunnel or
+# SSM session is involved — see the promote_dc local-exec below and ../../../ansible.
 
 # The local Administrator password is NOT self-authored. EC2 generates a random
 # password at first boot and encrypts it with the key pair's public key; the
@@ -13,17 +14,21 @@
 # Directory Services Restore Mode (safe-mode) password for the forest.
 # Generated here and handed to the promotion playbook; never needs to leave TF.
 resource "random_password" "dsrm" {
-  length           = 24
-  special          = true
-  override_special = "!@#%^*()-_=+[]{}"
+  length  = 24
+  special = true
+  # Braces are excluded on purpose: these values are passed to Ansible via env
+  # vars and consumed with lookup('env', ...), then used as module args that
+  # Ansible re-templates. A literal "{{" in the secret would be parsed as Jinja2.
+  override_special = "!@#%^*()-_=+[]"
 }
 
 # Password for the domain-join service account created in AD during the build.
 # Surfaced as a (sensitive) output for later iterations (Privilege Cloud vaulting).
 resource "random_password" "domain_join" {
-  length           = 24
-  special          = true
-  override_special = "!@#%^*()-_=+[]{}"
+  length  = 24
+  special = true
+  # Braces excluded — same Jinja2-injection reason as random_password.dsrm above.
+  override_special = "!@#%^*()-_=+[]"
 }
 
 locals {
@@ -75,9 +80,11 @@ resource "aws_instance" "us-ent-east-dc1" {
   }
 }
 
-# Promote the forest + build AD content over an SSM port-forward tunnel.
-# The wrapper opens localhost:55985 -> DC:5985, waits for the tunnel, runs the
-# setup_domain_controller.yml playbook against 127.0.0.1, then tears it down.
+# Promote the forest + build AD content by running the Ansible domain_controller
+# role directly against the DC's private IP over WinRM. No wrapper script, no SSM:
+# the playbook reads every connection/role value from the environment below via
+# lookup('env', ...). The role's own wait_for_connection tasks absorb the Windows
+# cold-boot window and the post-promotion reboot (it reconnects to the same IP).
 resource "null_resource" "promote_dc" {
   depends_on = [aws_instance.us-ent-east-dc1]
 
@@ -87,18 +94,11 @@ resource "null_resource" "promote_dc" {
   }
 
   provisioner "local-exec" {
-    command = "bash ${path.module}/scripts/promote_via_ssm.sh"
+    working_dir = abspath("${path.module}/../../../../ansible")
+    command     = "ansible-galaxy collection install -r requirements.yml && ansible-playbook -i '${var.private_ip},' playbooks/setup_domain_controller.yml"
 
     environment = {
-      SSM_INSTANCE_ID = aws_instance.us-ent-east-dc1.id
-      AWS_REGION      = var.region
-      LOCAL_PORT      = "55985"
-      # Conjur-sourced automation creds (API mode); empty in IAM mode. The script
-      # only exports these to the aws CLI when both are non-empty, so IAM mode
-      # keeps using the instance role.
-      AWS_ACCESS_KEY_ID_OVERRIDE     = var.aws_access_key_id
-      AWS_SECRET_ACCESS_KEY_OVERRIDE = var.aws_secret_access_key
-      ANSIBLE_DIR                    = abspath("${path.module}/../../../../ansible")
+      ANSIBLE_HOST_KEY_CHECKING = "False"
       # Administrator password: EC2-generated, decrypted in TF with the vaulted PEM.
       DC_ADMIN_PASSWORD           = local.admin_password
       DC_DOMAIN_FQDN              = var.domain_name

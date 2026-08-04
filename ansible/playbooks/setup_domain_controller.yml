@@ -1,8 +1,25 @@
 - name: Promote and configure the Active Directory domain controller
   hosts: all
   gather_facts: false
-  # All connection vars (host/port/user/password/transport) are supplied at
-  # runtime via the extra-vars file written by promote_via_ssm.sh, so the tunnel
-  # port (55985) and NTLM transport are defined in exactly one place.
+  # Connection + role values are injected by Terraform's promote_dc local-exec via
+  # environment variables and read here with lookup('env', ...). The inventory host
+  # is the DC's private IP (Terraform runs inside the VPC); we connect directly over
+  # WinRM (no SSM tunnel). NTLM works for both the pre-promotion local Administrator
+  # and the post-promotion domain admin; message_encryption:never matches the
+  # AllowUnencrypted=true listener set in user_data.
+  vars:
+    ansible_user: Administrator
+    ansible_password: "{{ lookup('env', 'DC_ADMIN_PASSWORD') }}"
+    ansible_connection: winrm
+    ansible_port: 5985
+    ansible_winrm_scheme: http
+    ansible_winrm_transport: ntlm
+    ansible_winrm_message_encryption: never
+    ansible_winrm_server_cert_validation: ignore
+    dc_domain_fqdn: "{{ lookup('env', 'DC_DOMAIN_FQDN') }}"
+    dc_domain_netbios: "{{ lookup('env', 'DC_DOMAIN_NETBIOS') }}"
+    dc_dsrm_password: "{{ lookup('env', 'DC_DSRM_PASSWORD') }}"
+    dc_service_account_name: "{{ lookup('env', 'DC_SERVICE_ACCOUNT_NAME') }}"
+    dc_service_account_password: "{{ lookup('env', 'DC_SERVICE_ACCOUNT_PASSWORD') }}"
   roles:
     - domain_controller

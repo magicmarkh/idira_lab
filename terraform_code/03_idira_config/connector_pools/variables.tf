@@ -123,26 +123,9 @@ variable "rds_domain_name" {
 }
 
 # ===========================
-# Remote State Variables
+# Remote State
 # ===========================
-# RESERVED for the planned migration to centralized S3 state. Currently unused:
-# connector_pools uses a local backend and reads 01_foundation via a local file
-# path. On the S3 switch these feed the terraform_remote_state data source config
-# and the `-backend-config` init values.
-variable "state_bucket" {
-  description = "S3 bucket name for Terraform remote state (reserved for future S3 backend)"
-  type        = string
-  default     = "my-terraform-state-bucket"
-}
-
-variable "foundation_state_key" {
-  description = "S3 key for foundation Terraform state (reserved for future S3 backend)"
-  type        = string
-  default     = "terraform/foundation.tfstate"
-}
-
-variable "state_region" {
-  description = "AWS region for Terraform state bucket (reserved for future S3 backend)"
-  type        = string
-  default     = "us-east-1"
-}
+# State now lives in the shared S3 backend (see backend.tf). The bucket / key /
+# region are literals in backend.tf and in the terraform_remote_state data source
+# (Terraform backend blocks cannot reference variables), so no state_* variables
+# are needed here.
