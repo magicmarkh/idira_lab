@@ -23,9 +23,9 @@ These scripts manage terraform.tfvars and backend.tf files using S3 as a central
    aws configure
    ```
 
-3. **S3 Access** to bucket `us-ent-east` in region `us-east-2`
+3. **S3 Access** to bucket `mh-tf-west-lab` in region `us-west-2`
    ```bash
-   aws s3 ls s3://us-ent-east --region us-east-2
+   aws s3 ls s3://mh-tf-west-lab --region us-west-2
    ```
 
 ## Quick Start
@@ -83,9 +83,10 @@ All Terraform layers store their state in the **`mh-tf-west-lab`** S3 bucket
 Each layer's `backend.tf` sets a distinct `key` (e.g. `state/01_foundation.tfstate`),
 and cross-layer reads use `data.terraform_remote_state` pointed at the matching key.
 
-> Note: the state bucket (`mh-tf-west-lab`) is separate from the tfvars-sync bucket
-> (`us-ent-east`) used by `pull_tfvars.sh`/`push_tfvars.sh`. The state bucket is
-> created and hardened by `01_foundation` (`module.s3_bucket`): versioning, encryption,
+> Note: the same bucket (`mh-tf-west-lab`) holds both Terraform state and the
+> tfvars-sync config used by `pull_tfvars.sh`/`push_tfvars.sh` (under the
+> `tfvars-config/` prefix). It is created and hardened by `01_foundation`
+> (`module.s3_bucket`): versioning, encryption,
 > public-access-block, and an IP-allowlist policy (`state_allowed_ips`) plus a VPC S3
 > gateway-endpoint exception for in-VPC runs.
 
@@ -213,7 +214,7 @@ The scripts manage these examples:
 Files are organized in S3 to mirror the repository structure:
 
 ```
-s3://us-ent-east/tfvars-config/
+s3://mh-tf-west-lab/tfvars-config/
 ├── terraform_code/
 │   ├── 01_foundation/
 │   │   ├── terraform.tfvars
@@ -291,13 +292,13 @@ ERROR: AWS CLI not found. Please install: https://aws.amazon.com/cli/
 ### Cannot access S3 bucket
 
 ```
-ERROR: Cannot access S3 bucket us-ent-east
+ERROR: Cannot access S3 bucket mh-tf-west-lab
 ```
 
 **Solution**: Check your AWS credentials and permissions:
 ```bash
 aws configure list
-aws s3 ls s3://us-ent-east --region us-east-2
+aws s3 ls s3://mh-tf-west-lab --region us-west-2
 ```
 
 ### File not found in S3
@@ -388,8 +389,8 @@ For issues or questions:
 ## Configuration
 
 S3 settings are defined in `scripts/config.sh`:
-- Bucket: `us-ent-east`
-- Region: `us-east-2`
+- Bucket: `mh-tf-west-lab`
+- Region: `us-west-2`
 - Prefix: `tfvars-config`
 
 To change these settings, edit `config.sh` (requires coordination with team).

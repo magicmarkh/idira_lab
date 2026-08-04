@@ -2,8 +2,8 @@
 # Shared configuration for tfvars and backend.tf management scripts
 
 # S3 Configuration
-export TFVARS_S3_BUCKET="us-ent-east"
-export TFVARS_S3_REGION="us-east-2"
+export TFVARS_S3_BUCKET="mh-tf-west-lab"
+export TFVARS_S3_REGION="us-west-2"
 export TFVARS_S3_PREFIX="tfvars-config"
 
 # Repository root (auto-detected)
