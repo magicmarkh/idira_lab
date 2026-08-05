@@ -1,34 +1,19 @@
-provider "aws" {
-  region     = var.region
-  access_key = var.conjur_authn_type == "api" ? data.conjur_secret.aws_access_key[0].value : null
-  secret_key = var.conjur_authn_type == "api" ? data.conjur_secret.aws_secret_key[0].value : null
-}
-
 terraform {
   required_version = ">= 1.3.0"
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.36"
-    }
-    tls = {
-      source  = "hashicorp/tls"
-      version = "~> 4.0"
+    idsec = {
+      # 0.7.2 fixes the "ISP auth token is not available" bug present in 0.7.1
+      # for the privilegecloud service — pin to >= 0.7.2.
+      source  = "cyberark/idsec"
+      version = "~> 0.8.1"
     }
     conjur = {
       source  = "cyberark/conjur"
       version = "~> 0.8.1"
     }
-    idsec = {
-      source  = "cyberark/idsec"
-      version = "~> 0.8.1"
-    }
   }
 }
 
-# =====================================================================
-# Conjur Provider - For retrieving secrets
-# =====================================================================
 provider "conjur" {
   appliance_url = var.conjur_appliance_url
   account       = var.conjur_account
@@ -43,11 +28,6 @@ provider "conjur" {
   host_id    = var.conjur_authn_type == "iam" ? var.conjur_host_id : null
 }
 
-# =====================================================================
-# Idira Identity Security (IDSec) Provider
-# Authenticates as an Identity service user whose credentials are
-# retrieved from Conjur. Used to create the safe and vault the AWS key.
-# =====================================================================
 data "conjur_secret" "identity_client_id" {
   name = var.conjur_identity_client_id_path
 }

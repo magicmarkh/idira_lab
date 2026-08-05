@@ -1,19 +1,8 @@
 # =====================================================================
 # Conjur Data Sources - Shared credentials for EC2 resources
 # =====================================================================
-# These data sources retrieve secrets from Conjur that can be used
-# across multiple EC2 instance types (connectors, targets, etc.)
-
-# Domain join credentials (Iteration 2). The svc-domain-joiner account is created
-# and vaulted during the DC build, so these Conjur paths exist by the time the
-# connector module consumes them.
-data "conjur_secret" "domain_join_username" {
-  name = var.conjur_domain_join_username_path
-}
-
-data "conjur_secret" "domain_join_password" {
-  name = var.conjur_domain_join_password_path
-}
+# These data sources retrieve secrets from Conjur that are used by the
+# providers (idsec identity) and by the credential vaulting in vault.tf.
 
 # Identity credentials
 data "conjur_secret" "identity_client_id" {
@@ -36,29 +25,18 @@ data "conjur_secret" "aws_secret_key" {
 }
 
 # AWS PEM key (the EC2 key pair private key, vaulted in 02_security and synced to
-# Conjur). Used by the DC promotion to decrypt the EC2-generated Administrator
-# password via `aws ec2 get-password-data --priv-launch-key`, and by the
-# connectors + kind_node modules (Iteration 2) for SSH.
+# Conjur). Used to decrypt the EC2-generated Windows Administrator passwords via
+# rsadecrypt(), and vaulted as-is as the Linux SSH root credential (see vault.tf).
 data "conjur_secret" "aws_pem_key" {
   name = var.conjur_aws_pem_key_path
 }
-
-# SWA agent enrollment token (only fetched when enabling the SWA layer via a
-# Conjur path; otherwise the token may be passed directly as a variable)
-# ITERATION 1 (DC only): re-enable alongside the kind_node module.
-/*
-data "conjur_secret" "swa_agent_enrollment_token" {
-  count = var.enable_swa_workloads && var.swa_agent_enrollment_token_path != "" ? 1 : 0
-  name  = var.swa_agent_enrollment_token_path
-}
-*/
 
 # =====================================================================
 # Remote State Data Sources
 # =====================================================================
 
-# Data source to reference Idira connector pools outputs (Iteration 2). The pool is
-# created in 03_idira_config/connector_pools and consumed by the connector module.
+# Idira connector pools (from 03_idira_config/connector_pools). Retained for
+# cross-layer wiring even though this raw-instance layer no longer consumes it.
 data "terraform_remote_state" "idira_connector_pools" {
   backend = "s3"
 

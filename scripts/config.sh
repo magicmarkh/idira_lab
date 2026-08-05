@@ -22,6 +22,8 @@ TERRAFORM_CODE_DIRS=(
     "01_foundation"
     "02_security"
     "03_idira_config/connector_pools"
+    "03_idira_config/safes_and_accounts"
+    "03_idira_config/zsp_policies"
     "04_ec2_compute"
     "05_rds_databases"
     "06_aws_cce_config"
