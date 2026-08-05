@@ -9,19 +9,19 @@ variable "asset_owner_name" {
 variable "region" {
   description = "AWS cloud region for the deployment"
   type        = string
-  default     = "us-east-2"
+  default     = "us-west-2"
 }
 
 variable "team_name" {
   description = "Cloud naming identifier"
   type        = string
-  default     = "us-ent-east"
+  default     = "mh-west"
 }
 
 variable "iScheduler" {
   description = "iScheduler tag for automated shutdown"
   type        = string
-  default     = "US_E_office"
+  default     = "US_W_office"
 }
 
 # ===========================
@@ -39,31 +39,33 @@ variable "instance_type" {
   default     = "t3a.small"
 }
 
-variable "key_name" {
-  description = "Name of the SSH key pair for EC2 instance access"
-  type        = string
-  default     = "us-ent-east-key"
-}
-
 # ===========================
 # Remote State Configuration
+#   key_name is sourced from the 02_security remote state (see main.tf), so it
+#   is intentionally not a variable here.
 # ===========================
 variable "state_bucket" {
-  description = "S3 bucket name for Terraform remote state"
+  description = "S3 bucket holding the shared Terraform remote state (created by 01_foundation)"
   type        = string
-  default     = "us-ent-east"
+  default     = "mh-tf-west-lab"
 }
 
 variable "state_region" {
-  description = "AWS region for S3 state bucket"
+  description = "AWS region for the S3 state bucket"
   type        = string
-  default     = "us-east-2"
+  default     = "us-west-2"
 }
 
 variable "foundation_state_key" {
-  description = "S3 key for foundation layer state"
+  description = "S3 key for the 01_foundation layer state"
   type        = string
-  default     = "terraform/foundation.tfstate"
+  default     = "state/01_foundation.tfstate"
+}
+
+variable "security_state_key" {
+  description = "S3 key for the 02_security layer state (source of the EC2 key pair name)"
+  type        = string
+  default     = "state/02_security.tfstate"
 }
 
 # ===========================
@@ -73,11 +75,6 @@ variable "target_user" {
   description = "Linux user account for SSH key management"
   type        = string
   default     = "ec2-user"
-}
-
-variable "connector_id" {
-  description = "Idira connector ID for SSH access"
-  type        = string
 }
 
 # ===========================

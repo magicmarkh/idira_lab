@@ -172,6 +172,16 @@ resource "aws_instance" "linux_target" {
   user_data = <<-EOF
     #!/bin/bash -xe
     hostnamectl set-hostname "${var.linux_target_1_hostname}"
+
+    # Base tooling: git, pip, and Terraform.
+    dnf install -y git python3-pip dnf-plugins-core
+
+    # Ansible via pip.
+    pip3 install --user ansible
+
+    # Terraform from the official HashiCorp repo.
+    dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+    dnf install -y terraform
   EOF
 
   tags = {

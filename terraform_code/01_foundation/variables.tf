@@ -65,6 +65,15 @@ variable "dc1_private_ip" {
 }
 
 # ===========================
+# State / S3 Bucket
+# ===========================
+variable "state_bucket_name" {
+  description = "Name of the S3 bucket to create. Doubles as the shared Terraform state store consumed by all downstream layers."
+  type        = string
+  default     = "mh-tf-west-lab"
+}
+
+# ===========================
 # State Bucket Access
 # ===========================
 # The mh-tf-west-lab bucket is the shared Terraform state store. Its bucket

@@ -17,7 +17,7 @@ module "vpc" {
 module "s3_bucket" {
   source           = "./s3_bucket"
   asset_owner_name = var.asset_owner_name
-  bucket_name      = "mh-tf-west-lab"
+  bucket_name      = var.state_bucket_name
 
   # This bucket is also the shared Terraform state store. Restrict access to an
   # expandable list of public IPs plus the VPC's S3 gateway endpoint (for in-VPC

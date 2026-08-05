@@ -75,9 +75,23 @@ data "terraform_remote_state" "foundation" {
   backend = "s3"
 
   config = {
-    bucket = "mh-tf-west-lab"
-    key    = "state/01_foundation.tfstate"
-    region = "us-west-2"
+    bucket = var.state_bucket
+    key    = var.foundation_state_key
+    region = var.state_region
+  }
+}
+
+# =====================================================================
+# Data Sources: Remote State (Security Layer)
+#   Source of the AWS EC2 key pair created/vaulted in 02_security.
+# =====================================================================
+data "terraform_remote_state" "security" {
+  backend = "s3"
+
+  config = {
+    bucket = var.state_bucket
+    key    = var.security_state_key
+    region = var.state_region
   }
 }
 
@@ -112,7 +126,7 @@ resource "aws_instance" "demo_linux_target" {
   instance_type               = var.instance_type
   subnet_id                   = data.terraform_remote_state.foundation.outputs.private_subnet_id
   associate_public_ip_address = false
-  key_name                    = var.key_name
+  key_name                    = data.terraform_remote_state.security.outputs.key_name
   vpc_security_group_ids = [
     data.terraform_remote_state.foundation.outputs.ssh_internal_flat_sg_id
   ]
@@ -145,7 +159,7 @@ resource "aws_instance" "demo_linux_target" {
 # =====================================================================
 resource "idsec_sia_ssh_public_key" "demo_linux_target_key" {
   target_machine       = aws_instance.demo_linux_target.private_ip
-  username             = "ec2-user"
+  username             = var.target_user
   private_key_contents = data.conjur_secret.aws_pem_key.value
 
   depends_on = [aws_instance.demo_linux_target]

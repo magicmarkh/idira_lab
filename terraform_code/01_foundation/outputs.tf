@@ -40,6 +40,11 @@ output "bucket_id" {
   value       = module.s3_bucket.bucket_id
 }
 
+output "bucket_name" {
+  description = "Name of the S3 bucket (shared Terraform state store), consumed by downstream layers"
+  value       = module.s3_bucket.bucket_id
+}
+
 # ===========================
 # Security Group Outputs
 # ===========================
