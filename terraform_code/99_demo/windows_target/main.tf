@@ -319,7 +319,6 @@ resource "idsec_pcloud_account" "demo_target_admin" {
     ignore_changes = [
       secret,                     # CPM rotates passwords after initial creation
       name,                       # Idira manages naming
-      account_id,                 # Assigned by Idira
       secret_type,                # Computed by Idira
       platform_account_properties # Platform-specific settings
     ]
