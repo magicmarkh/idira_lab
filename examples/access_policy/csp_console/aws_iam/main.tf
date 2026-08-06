@@ -19,7 +19,7 @@ resource "idsec_policy_cloud_access" "example_policy" {
     },
     time_frame = {
       from_time = local.from_time
-      to_time = local.to_time
+      to_time   = local.to_time
     }
     policy_entitlement = {
       target_category = "Cloud console",

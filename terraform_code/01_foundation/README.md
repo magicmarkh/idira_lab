@@ -105,7 +105,7 @@ Set:
 
 | Variable | Purpose |
 |----------|---------|
-| `conjur_service_id` | The `authn-iam` service ID configured in Conjur (e.g. `prod`). |
+| `conjur_authenticator_name` | Name of the Conjur `authn-iam` authenticator only (e.g. `corp-aws`), NOT the full `conjur/authn-iam/corp-aws` path shown in the GUI. |
 | `conjur_host_id` | The Conjur host mapped to the IAM role, e.g. `<account-id>/<role-name>`. |
 
 Conjur-side setup:

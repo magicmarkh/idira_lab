@@ -10,9 +10,9 @@ terraform {
       source  = "cyberark/idsec"
       version = "~> 0.3.3"
     }
-   # conjur = {
+    # conjur = {
     #  source  = "cyberark/conjur"
-     # version = "~> 0.8.1"
+    # version = "~> 0.8.1"
     #}
   }
 }
@@ -88,9 +88,9 @@ locals {
 resource "idsec_cce_aws_organization_account" "member_accounts" {
   for_each = local.member_accounts
 
-  account_id             = each.value.id
+  account_id = each.value.id
   #parent_organization_id = module.cce_aws_organization.org_onboarding_id
-  parent_organization_id =  var.organization_id
+  parent_organization_id = var.organization_id
   display_name           = each.value.name != "" ? each.value.name : "Account-${each.value.id}"
 
   services = [{ service_name = "sca" }]

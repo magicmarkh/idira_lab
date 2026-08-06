@@ -25,7 +25,7 @@ provider "aws" {
 }
 
 module "cce_add_account" {
- source  = "cyberark/cce-organization-add-account/aws"
+  source  = "cyberark/cce-organization-add-account/aws"
   version = "~> 0.2.0"
 
   org_onboarding_id = var.org_onboarding_id

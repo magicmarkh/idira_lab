@@ -81,7 +81,7 @@ update_tfvars_auth() {
     local authn_type="$2"
     local conjur_login="$3"
     local conjur_api_key="$4"
-    local conjur_service_id="$5"
+    local conjur_authenticator_name="$5"
     local conjur_host_id="$6"
 
     if grep -qE '^conjur_authn_type[[:space:]]*=' "${file_path}" || \
@@ -91,7 +91,7 @@ update_tfvars_auth() {
         update_field "${file_path}" "conjur_authn_type" "${authn_type}"
         update_field "${file_path}" "conjur_login" "${conjur_login}"
         update_field "${file_path}" "conjur_api_key" "${conjur_api_key}"
-        update_field "${file_path}" "conjur_service_id" "${conjur_service_id}"
+        update_field "${file_path}" "conjur_authenticator_name" "${conjur_authenticator_name}"
         update_field "${file_path}" "conjur_host_id" "${conjur_host_id}"
 
         echo "  ✓ Auth configured: ${file_path}"
@@ -109,7 +109,7 @@ configure_conjur_auth() {
     local authn_type="$1"
     local conjur_login="$2"
     local conjur_api_key="$3"
-    local conjur_service_id="$4"
+    local conjur_authenticator_name="$4"
     local conjur_host_id="$5"
 
     echo ""
@@ -120,7 +120,7 @@ configure_conjur_auth() {
         local tfvars_path="${REPO_ROOT}/terraform_code/${dir}/${TFVARS_FILENAME}"
         if [[ -f "${tfvars_path}" ]]; then
             update_tfvars_auth "${tfvars_path}" "${authn_type}" "${conjur_login}" \
-                "${conjur_api_key}" "${conjur_service_id}" "${conjur_host_id}" || true
+                "${conjur_api_key}" "${conjur_authenticator_name}" "${conjur_host_id}" || true
         fi
     done
 
@@ -128,7 +128,7 @@ configure_conjur_auth() {
         local tfvars_path="${REPO_ROOT}/examples/${dir}/${TFVARS_FILENAME}"
         if [[ -f "${tfvars_path}" ]]; then
             update_tfvars_auth "${tfvars_path}" "${authn_type}" "${conjur_login}" \
-                "${conjur_api_key}" "${conjur_service_id}" "${conjur_host_id}" || true
+                "${conjur_api_key}" "${conjur_authenticator_name}" "${conjur_host_id}" || true
         fi
     done
 }
@@ -237,7 +237,7 @@ main() {
     local authn_type=""
     local conjur_login=""
     local conjur_api_key=""
-    local conjur_service_id=""
+    local conjur_authenticator_name=""
     local conjur_host_id=""
 
     if is_ec2; then
@@ -267,8 +267,8 @@ main() {
             1|iam)
                 authn_type="iam"
                 echo ""
-                read -p "Enter conjur_service_id [prod]: " conjur_service_id
-                conjur_service_id="${conjur_service_id:-prod}"
+                read -p "Enter conjur_authenticator_name [corp-aws]: " conjur_authenticator_name
+                conjur_authenticator_name="${conjur_authenticator_name:-corp-aws}"
                 read -p "Enter conjur_host_id [host/data/murphys-tf]: " conjur_host_id
                 conjur_host_id="${conjur_host_id:-host/data/murphys-tf}"
                 ;;
@@ -304,8 +304,8 @@ main() {
             2|iam)
                 authn_type="iam"
                 echo ""
-                read -p "Enter conjur_service_id [prod]: " conjur_service_id
-                conjur_service_id="${conjur_service_id:-prod}"
+                read -p "Enter conjur_authenticator_name [corp-aws]: " conjur_authenticator_name
+                conjur_authenticator_name="${conjur_authenticator_name:-corp-aws}"
                 read -p "Enter conjur_host_id [host/data/murphys-tf]: " conjur_host_id
                 conjur_host_id="${conjur_host_id:-host/data/murphys-tf}"
                 ;;
@@ -317,7 +317,7 @@ main() {
     fi
 
     configure_conjur_auth "${authn_type}" "${conjur_login}" "${conjur_api_key}" \
-        "${conjur_service_id}" "${conjur_host_id}"
+        "${conjur_authenticator_name}" "${conjur_host_id}"
 
     echo ""
     echo "=========================================="

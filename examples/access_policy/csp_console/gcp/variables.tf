@@ -2,21 +2,21 @@
 # Conjur Variables
 # ===========================
 variable "conjur_appliance_url" {
-  type = string
+  type        = string
   description = "conjur api url"
 }
 variable "conjur_account" {
-  type = string
+  type        = string
   description = "conjur account name"
 }
 variable "conjur_api_key" {
-  type      = string
+  type        = string
   description = "conjur api key"
-  sensitive = true
+  sensitive   = true
   default     = ""
 }
 variable "conjur_login" {
-  type = string
+  type        = string
   description = "conjur login name"
 }
 
@@ -30,10 +30,21 @@ variable "conjur_authn_type" {
   }
 }
 
-variable "conjur_service_id" {
-  description = "Conjur authn-iam service ID (required when conjur_authn_type = 'iam')"
+variable "conjur_authenticator_name" {
+  description = <<-EOT
+    Name of the Conjur authn-iam authenticator ONLY (e.g. "corp-aws"), required
+    when conjur_authn_type = 'iam'. This is the last path segment, NOT the full
+    web service ID the Conjur GUI shows. The GUI displays the object as
+    "conjur/authn-iam/corp-aws"; the provider builds the URL as
+    "authn-iam/<name>/...", so pasting the full path double-nests it and Conjur
+    returns 404. Use "corp-aws", not "conjur/authn-iam/corp-aws".
+  EOT
   type        = string
   default     = ""
+  validation {
+    condition     = length(regexall("/", var.conjur_authenticator_name)) == 0
+    error_message = "conjur_authenticator_name must be the authenticator name only (e.g. 'corp-aws'), not the full 'conjur/authn-iam/corp-aws' path shown in the GUI."
+  }
 }
 
 variable "conjur_host_id" {
@@ -46,17 +57,17 @@ variable "conjur_host_id" {
 # Policy Variables
 # ===========================
 variable "policy_name" {
-  type = string
+  type        = string
   description = "Name of the policy to be created"
 }
 
 variable "policy_description" {
-  type = string
+  type        = string
   description = "Description of the policy to be created"
 }
 
 variable "location_type" {
-  type = string
+  type        = string
   description = "CSP location e.g. AWS, AZURE, GCP"
 }
 
@@ -71,8 +82,8 @@ variable "principals" {
   type = list(object({
     #id   = string
     source_directory_id = string
-    name = string
-    type = string
+    name                = string
+    type                = string
   }))
   description = "List of principals (users/groups) who can access the policy"
 }
@@ -107,8 +118,8 @@ variable "gcp_subscription_targets" {
   type = list(object({
     role_id        = string
     workspace_id   = string
-    workspace_type  = string
+    workspace_type = string
     org_id         = string
-      }))
+  }))
   description = "List of GCP subscription targets with role information"
 }
