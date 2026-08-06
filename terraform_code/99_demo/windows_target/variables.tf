@@ -72,7 +72,7 @@ variable "security_state_key" {
 variable "domain_name" {
   description = "Active Directory domain name"
   type        = string
-  default     = "murphyslab.local"
+  default     = "your.domain"
 }
 
 variable "domain_ou_path" {
@@ -87,13 +87,13 @@ variable "domain_ou_path" {
 variable "platform_id" {
   description = "Idira platform ID for Windows local admin accounts"
   type        = string
-  default     = "M-Windows-Server-Local-Admin"
+  default     = "Your-Platform-ID"
 }
 
 variable "safe_name" {
   description = "Name of the safe created in Idira"
   type        = string
-  default     = "m-eph-windows-local"
+  default     = "Your-safe-name"
 }
 variable "safe_description" {
   description = "Description for the Idira safe"
@@ -113,7 +113,7 @@ variable "safe_retention_days" {
 variable "conjur_appliance_url" {
   description = "URL of the Conjur appliance"
   type        = string
-  default     = "https://murphyslab.secretsmgr.cyberark.cloud/api"
+  default     = "https://subdomain.secretsmgr.cyberark.cloud/api"
 }
 
 variable "conjur_account" {
@@ -125,7 +125,7 @@ variable "conjur_account" {
 variable "conjur_login" {
   description = "Conjur login name"
   type        = string
-  default     = "host/data/murphys-tf"
+  default     = "host/data/your/conjur/path"
 }
 
 variable "conjur_api_key" {
