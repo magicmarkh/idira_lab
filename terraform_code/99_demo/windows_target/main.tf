@@ -182,29 +182,16 @@ locals {
   # value drives the Ansible domain-join and the Idira vault account.
   admin_password = rsadecrypt(aws_instance.demo_target.password_data, data.conjur_secret.aws_pem_key.value)
 
-  # Escape special characters in passwords for safe shell interpolation
-  # This handles double quotes, backslashes, and dollar signs
-  admin_password_escaped = replace(
-    replace(
-      replace(
-        replace(local.admin_password, "\\", "\\\\"),
-        "\"", "\\\""
-      ),
-      "$", "\\$"
-    ),
-    "'", "'\\''"
-  )
-
-  domain_password_escaped = replace(
-    replace(
-      replace(
-        replace(data.conjur_secret.domain_join_password.value, "\\", "\\\\"),
-        "\"", "\\\""
-      ),
-      "$", "\\$"
-    ),
-    "'", "'\\''"
-  )
+  # Ansible extra-vars are written to a temporary YAML file (see the local-exec
+  # provisioners below) and consumed with `-e @file` instead of inline
+  # `-e key=value`. Inline extra-vars run through Ansible's Jinja-aware argument
+  # splitter, so a password containing `{{` aborts with "unbalanced jinja2
+  # block". YAML single-quoted scalars only require doubling embedded single
+  # quotes; the `!unsafe` tag on the value in the file then stops Ansible from
+  # templating it, so `{{`, `$`, quotes, and backslashes all pass through
+  # verbatim.
+  admin_password_yaml  = replace(local.admin_password, "'", "''")
+  domain_password_yaml = replace(data.conjur_secret.domain_join_password.value, "'", "''")
 }
 
 # =====================================================================
@@ -216,9 +203,9 @@ resource "terraform_data" "domain_operations" {
   triggers_replace = {
     instance_id     = aws_instance.demo_target.id
     instance_ip     = aws_instance.demo_target.private_ip
-    admin_password  = local.admin_password_escaped
+    admin_password  = local.admin_password
     domain_user     = "${data.conjur_secret.domain_join_username.value}@${var.domain_name}"
-    domain_password = local.domain_password_escaped
+    domain_password = data.conjur_secret.domain_join_password.value
     domain_name     = var.domain_name
     domain_ou_path  = var.domain_ou_path
     hostname        = var.hostname
@@ -230,20 +217,28 @@ resource "terraform_data" "domain_operations" {
   # Create-time provisioner: Join domain
   provisioner "local-exec" {
     command = <<EOT
-cd ../../../ansible && ansible-playbook \
+cd ../../../ansible
+VARS_DIR="$(mktemp -d)"
+cat > "$VARS_DIR/extra_vars.yml" <<'ANSIBLE_VARS'
+ansible_user: Administrator
+ansible_password: !unsafe '${local.admin_password_yaml}'
+ansible_connection: winrm
+ansible_port: 5985
+ansible_winrm_scheme: http
+ansible_winrm_server_cert_validation: ignore
+hostname: '${var.hostname}'
+domain_join_username: '${data.conjur_secret.domain_join_username.value}@${var.domain_name}'
+domain_join_password: !unsafe '${local.domain_password_yaml}'
+domain_name: '${var.domain_name}'
+domain_ou_path: '${var.domain_ou_path}'
+ANSIBLE_VARS
+ansible-playbook \
   -i '${aws_instance.demo_target.private_ip},' \
-  -e 'ansible_user=Administrator' \
-  -e 'ansible_password="${local.admin_password_escaped}"' \
-  -e 'ansible_connection=winrm' \
-  -e 'ansible_port=5985' \
-  -e 'ansible_winrm_scheme=http' \
-  -e 'ansible_winrm_server_cert_validation=ignore' \
-  -e 'hostname=${var.hostname}' \
-  -e 'domain_join_username=${data.conjur_secret.domain_join_username.value}@${var.domain_name}' \
-  -e 'domain_join_password="${local.domain_password_escaped}"' \
-  -e 'domain_name=${var.domain_name}' \
-  -e 'domain_ou_path=${var.domain_ou_path}' \
+  -e @"$VARS_DIR/extra_vars.yml" \
   playbooks/onboard_windows_connector.yml
+RESULT=$?
+rm -rf "$VARS_DIR"
+exit $RESULT
 EOT
   }
 
@@ -258,20 +253,26 @@ echo "Hostname: ${self.triggers_replace.hostname}"
 echo "Connecting as: local Administrator account"
 echo "==============================================================="
 
-cd ../../../ansible && ansible-playbook \
+cd ../../../ansible
+VARS_DIR="$(mktemp -d)"
+cat > "$VARS_DIR/extra_vars.yml" <<'ANSIBLE_VARS'
+ansible_user: Administrator
+ansible_password: !unsafe '${replace(self.triggers_replace.admin_password, "'", "''")}'
+ansible_connection: winrm
+ansible_port: 5985
+ansible_winrm_scheme: http
+ansible_winrm_server_cert_validation: ignore
+domain_admin_user: '${self.triggers_replace.domain_user}'
+domain_admin_password: !unsafe '${replace(self.triggers_replace.domain_password, "'", "''")}'
+domain_name: '${self.triggers_replace.domain_name}'
+ANSIBLE_VARS
+ansible-playbook \
   -i '${self.triggers_replace.instance_ip},' \
-  -e 'ansible_user=Administrator' \
-  -e 'ansible_password="${self.triggers_replace.admin_password}"' \
-  -e 'ansible_connection=winrm' \
-  -e 'ansible_port=5985' \
-  -e 'ansible_winrm_scheme=http' \
-  -e 'ansible_winrm_server_cert_validation=ignore' \
-  -e 'domain_admin_user=${self.triggers_replace.domain_user}' \
-  -e 'domain_admin_password="${self.triggers_replace.domain_password}"' \
-  -e 'domain_name=${self.triggers_replace.domain_name}' \
+  -e @"$VARS_DIR/extra_vars.yml" \
   playbooks/unjoin_domain.yml
 
 UNJOIN_RESULT=$?
+rm -rf "$VARS_DIR"
 if [ $UNJOIN_RESULT -eq 0 ]; then
   echo "==================== DOMAIN UNJOIN SUCCESSFUL ===================="
 else
