@@ -6,8 +6,8 @@ These modules provision the core resources of the lab including EC2 instances, R
 Declare one of the submodules in your configuration and pass the required variables. For example:
 
 ```hcl
-module "dc" {
-  source = "./modules/infrastructure/ec2_instances/dc"
+module "target" {
+  source = "./modules/infrastructure/ec2_instances/targets"
 }
 ```
 

@@ -30,6 +30,7 @@ TERRAFORM_CODE_DIRS=(
     "98_dev"
     "99_demo/windows_target"
     "99_demo/linux_target"
+    "99_demo/scale_connectors"
     # Deferred idira_config sub-states (users, accounts/*, sia_settings,
     # secrets_manager_swa) moved to terraform_code/_future_idira_config/ —
     # re-add here when you're ready to deploy them.

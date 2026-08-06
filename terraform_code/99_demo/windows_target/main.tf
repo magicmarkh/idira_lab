@@ -192,6 +192,12 @@ locals {
   # verbatim.
   admin_password_yaml  = replace(local.admin_password, "'", "''")
   domain_password_yaml = replace(data.conjur_secret.domain_join_password.value, "'", "''")
+
+  # Domain-join user in UPN form (user@domain). The Conjur username field may hold
+  # either the bare sAMAccountName ("svc_domainjoiner") or the full UPN
+  # ("svc_domainjoiner@mh.local"); only append "@<domain>" when it isn't already
+  # a UPN, so we never produce "user@domain@domain".
+  domain_join_upn = strcontains(data.conjur_secret.domain_join_username.value, "@") ? data.conjur_secret.domain_join_username.value : "${data.conjur_secret.domain_join_username.value}@${var.domain_name}"
 }
 
 # =====================================================================
@@ -204,7 +210,7 @@ resource "terraform_data" "domain_operations" {
     instance_id     = aws_instance.demo_target.id
     instance_ip     = aws_instance.demo_target.private_ip
     admin_password  = local.admin_password
-    domain_user     = "${data.conjur_secret.domain_join_username.value}@${var.domain_name}"
+    domain_user     = local.domain_join_upn
     domain_password = data.conjur_secret.domain_join_password.value
     domain_name     = var.domain_name
     domain_ou_path  = var.domain_ou_path
@@ -227,7 +233,7 @@ ansible_port: 5985
 ansible_winrm_scheme: http
 ansible_winrm_server_cert_validation: ignore
 hostname: '${var.hostname}'
-domain_join_username: '${data.conjur_secret.domain_join_username.value}@${var.domain_name}'
+domain_join_username: '${local.domain_join_upn}'
 domain_join_password: !unsafe '${local.domain_password_yaml}'
 domain_name: '${var.domain_name}'
 domain_ou_path: '${var.domain_ou_path}'

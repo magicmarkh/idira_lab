@@ -176,8 +176,25 @@ resource "aws_instance" "linux_target" {
     # Base tooling: git, pip, and Terraform.
     dnf install -y git python3-pip dnf-plugins-core
 
-    # Ansible via pip.
-    pip3 install --user ansible
+    # Ansible + control-node libraries.
+    #   pywinrm  -> required by the winrm connection plugin for Windows targets
+    #               (99_demo/windows_target domain join). Installed on the
+    #               CONTROL node's Python; without it Ansible fails with
+    #               "No module named 'winrm'".
+    pip3 install --user ansible pywinrm
+    export PATH="$HOME/.local/bin:$PATH"
+
+    # Ansible Galaxy collections. Keep this list in sync with
+    # ansible/requirements.yml (the canonical source). Installed into the
+    # system-wide path so any login user's ansible run can find them.
+    #   microsoft.ad / ansible.windows / community.windows -> Windows domain join
+    #   amazon.aws / community.aws                          -> aws_ssm connection (98_dev)
+    ansible-galaxy collection install -p /usr/share/ansible/collections \
+      'microsoft.ad:>=1.7.0,<2.0.0' \
+      'ansible.windows:>=2.5.0,<3.0.0' \
+      'community.windows:>=2.3.0,<3.0.0' \
+      'amazon.aws:>=8.0.0,<10.0.0' \
+      'community.aws:>=8.0.0,<10.0.0'
 
     # Terraform from the official HashiCorp repo.
     dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
