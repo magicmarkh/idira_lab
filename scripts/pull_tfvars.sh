@@ -275,8 +275,8 @@ main() {
             2|api)
                 authn_type="api"
                 echo ""
-                read -p "Enter conjur_login [host/data/murphys-tf]: " conjur_login
-                conjur_login="${conjur_login:-host/data/murphys-tf}"
+                read -p "Enter conjur_login [host/data/mh/identities/mh-tf-api]: " conjur_login
+                conjur_login="${conjur_login:-host/data/mh/identities/mh-tf-api}"
                 conjur_api_key=$(read_secret "Enter conjur_api_key")
                 if [[ -z "${conjur_api_key}" ]]; then
                     echo "ERROR: conjur_api_key is required for API mode."
@@ -293,8 +293,8 @@ main() {
             1|api)
                 authn_type="api"
                 echo ""
-                read -p "Enter conjur_login [host/data/murphys-tf]: " conjur_login
-                conjur_login="${conjur_login:-host/data/murphys-tf}"
+                read -p "Enter conjur_login [host/data/mh/identities/mh-tf-api]: " conjur_login
+                conjur_login="${conjur_login:-host/data/mh/identities/mh-tf-api}"
                 conjur_api_key=$(read_secret "Enter conjur_api_key")
                 if [[ -z "${conjur_api_key}" ]]; then
                     echo "ERROR: conjur_api_key is required for API mode."
