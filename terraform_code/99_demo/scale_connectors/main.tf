@@ -212,6 +212,6 @@ resource "idsec_sia_access_connector" "connector" {
   target_machine       = aws_instance.connector[count.index].private_ip
   username             = var.connector_username
   private_key_contents = data.conjur_secret.aws_pem_key.value
-
+  force_delete = true
   depends_on = [aws_instance.connector]
 }
