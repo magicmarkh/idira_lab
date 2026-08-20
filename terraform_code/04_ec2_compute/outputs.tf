@@ -39,6 +39,16 @@ output "instance_private_ips" {
   }
 }
 
+output "kind_node_instance_id" {
+  description = "ID of the Kind node instance"
+  value       = module.kind_node.instance_id
+}
+
+output "kind_node_private_ip" {
+  description = "Private IP of the Kind node"
+  value       = module.kind_node.private_ip
+}
+
 # =====================================================================
 # VAULTING
 # =====================================================================

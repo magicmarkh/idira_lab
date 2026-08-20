@@ -120,6 +120,17 @@ variable "linux_target_instance_type" {
   default     = "t3a.medium"
 }
 
+variable "kind_node_private_ip" {
+  description = "Private IP of the Kind (Kubernetes-in-Docker) node (e.g. 192.168.20.60)"
+  type        = string
+}
+
+variable "kind_node_hostname" {
+  description = "Hostname / Name-tag suffix for the Kind node"
+  type        = string
+  default     = "kind1"
+}
+
 # ---------------------------------------------------------------------
 # CyberArk vaulting — safes, platforms, members
 # ---------------------------------------------------------------------
