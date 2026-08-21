@@ -25,13 +25,16 @@ module "db_subnet_group" {
 # =====================================================================
 # RDS DATABASES
 # =====================================================================
-module "mysql" {
-  source                 = "./rds/mysql"
-  iScheduler             = var.iScheduler
-  db_subnet_group_name   = module.db_subnet_group.db_subnet_group_name
-  asset_owner_name       = var.asset_owner_name
-  vpc_security_group_ids = [data.terraform_remote_state.foundation.outputs.mysql_target_sg_id]
-}
+# MySQL deployment disabled for now — re-enable when needed. If you re-enable,
+# also add a vault.tf account/safe for its master credential (currently only
+# PostgreSQL and MSSQL are vaulted).
+# module "mysql" {
+#   source                 = "./rds/mysql"
+#   iScheduler             = var.iScheduler
+#   db_subnet_group_name   = module.db_subnet_group.db_subnet_group_name
+#   asset_owner_name       = var.asset_owner_name
+#   vpc_security_group_ids = [data.terraform_remote_state.foundation.outputs.mysql_target_sg_id]
+# }
 
 module "postgresql" {
   source                 = "./rds/postgresql"

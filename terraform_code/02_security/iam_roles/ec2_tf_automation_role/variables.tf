@@ -9,3 +9,9 @@ variable "ec2_tf_automation_role_name" {
   type        = string
   # Example: "my-role-name"
 }
+
+variable "domain_join_secret_name_prefix" {
+  description = "Name prefix of the ASM secret holding the MSSQL domain-join credentials (05_rds_databases creates it as <team>-mssql-domain-joiner). Used to scope the Secrets Manager policy."
+  type        = string
+  default     = "mh-west-mssql-domain-joiner"
+}

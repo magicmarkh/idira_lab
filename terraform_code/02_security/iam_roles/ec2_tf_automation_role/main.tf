@@ -46,6 +46,65 @@ resource "aws_iam_role_policy" "iam_policy" {
   policy = data.aws_iam_policy_document.iam_access.json
 }
 
+# RDS policy for Terraform automation (05_rds_databases): create/manage the
+# PostgreSQL + MSSQL instances and their DB subnet group. Scoped to the actions
+# the layer actually uses rather than rds:*. Resources are "*" because RDS
+# tagging/describe calls and the engine-version data source are not
+# resource-scopable in a useful way here.
+data "aws_iam_policy_document" "rds_access" {
+  statement {
+    actions = [
+      "rds:CreateDBInstance",
+      "rds:ModifyDBInstance",
+      "rds:DeleteDBInstance",
+      "rds:DescribeDBInstances",
+      "rds:DescribeDBEngineVersions",
+      "rds:CreateDBSubnetGroup",
+      "rds:ModifyDBSubnetGroup",
+      "rds:DeleteDBSubnetGroup",
+      "rds:DescribeDBSubnetGroups",
+      "rds:AddTagsToResource",
+      "rds:RemoveTagsFromResource",
+      "rds:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "rds_policy" {
+  name   = "${var.ec2_tf_automation_role_name}-rds-policy"
+  role   = aws_iam_role.ec2_tf_automation_role.id
+  policy = data.aws_iam_policy_document.rds_access.json
+}
+
+# Secrets Manager policy: the MSSQL self-managed AD domain join stores its
+# domain-join credentials (sourced from Conjur) in an ASM secret that RDS reads.
+# Scoped to the domain-joiner secret name pattern for this team.
+data "aws_iam_policy_document" "secretsmanager_access" {
+  statement {
+    actions = [
+      "secretsmanager:CreateSecret",
+      "secretsmanager:DeleteSecret",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:TagResource",
+      "secretsmanager:UntagResource",
+      "secretsmanager:PutResourcePolicy",
+      "secretsmanager:GetResourcePolicy",
+      "secretsmanager:DeleteResourcePolicy",
+      "secretsmanager:ListSecretVersionIds",
+    ]
+    resources = ["arn:aws:secretsmanager:*:*:secret:${var.domain_join_secret_name_prefix}*"]
+  }
+}
+
+resource "aws_iam_role_policy" "secretsmanager_policy" {
+  name   = "${var.ec2_tf_automation_role_name}-secretsmanager-policy"
+  role   = aws_iam_role.ec2_tf_automation_role.id
+  policy = data.aws_iam_policy_document.secretsmanager_access.json
+}
+
 # S3 bucket access policy
 data "aws_iam_policy_document" "s3_access" {
   statement {
