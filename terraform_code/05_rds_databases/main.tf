@@ -44,10 +44,18 @@ module "postgresql" {
 
 module "mssql" {
   source                 = "./rds/mssql"
+  identifier             = "${var.team_name}-mssql"
   iScheduler             = var.iScheduler
   db_subnet_group_name   = module.db_subnet_group.db_subnet_group_name
   asset_owner_name       = var.asset_owner_name
   vpc_security_group_ids = [data.terraform_remote_state.foundation.outputs.mssql_target_sg_id]
-  domain_auth_secret_arn = var.mssql_domain_join_arn
-  domain_ou              = var.mssql_domain_ou
+
+  # Self-managed AD domain join. The domain-join account is pulled from Conjur
+  # and bridged into AWS Secrets Manager (mssql_domain_secret.tf); when the
+  # join is disabled these are null and RDS deploys standalone.
+  domain_auth_secret_arn = var.mssql_domain_join_enabled ? aws_secretsmanager_secret.mssql_domain_join[0].arn : null
+  domain_fqdn            = var.mssql_domain_join_enabled ? var.mssql_domain_fqdn : null
+  domain_ou              = var.mssql_domain_join_enabled ? var.mssql_domain_ou : null
+
+  depends_on = [aws_secretsmanager_secret_version.mssql_domain_join]
 }

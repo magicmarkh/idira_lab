@@ -15,6 +15,10 @@ terraform {
       source  = "cyberark/conjur"
       version = "~> 0.8.1"
     }
+    idsec = {
+      source  = "cyberark/idsec"
+      version = "~> 0.8.1"
+    }
   }
 }
 
@@ -33,4 +37,13 @@ provider "conjur" {
   # IAM auth (EC2) — null when using API key
   service_id = var.conjur_authn_type == "iam" ? var.conjur_authenticator_name : null
   host_id    = var.conjur_authn_type == "iam" ? var.conjur_host_id : null
+}
+
+# =====================================================================
+# Idira Identity Security Provider - for CyberArk vaulting of DB credentials
+# =====================================================================
+provider "idsec" {
+  auth_method   = "identity_service_user"
+  service_user  = data.conjur_secret.identity_client_id.value
+  service_token = data.conjur_secret.identity_client_secret.value
 }

@@ -21,16 +21,41 @@ variable "iScheduler" {
   default     = "US_E_office"
 }
 
-variable "mssql_domain_join_arn" {
-  description = "arn for mssql service account"
+# ---------------------------------------------------------------------
+# MSSQL self-managed AD domain join
+#
+# The domain-join account is sourced from Conjur and bridged into AWS Secrets
+# Manager (see data.tf / mssql_domain_secret.tf); RDS reads it from ASM. Set
+# mssql_domain_join_enabled = false to deploy a standalone SQL Server Express.
+# ---------------------------------------------------------------------
+variable "mssql_domain_join_enabled" {
+  description = "Join the RDS SQL Server to self-managed AD using the Conjur-sourced domain-join account. False = standalone."
+  type        = bool
+  default     = true
+}
+
+variable "mssql_domain_fqdn" {
+  description = "Fully-qualified AD domain name for the MSSQL domain join (e.g. mh.local)"
+  type        = string
+  default     = "mh.local"
+}
+
+variable "mssql_domain_ou" {
+  description = "Organizational Unit (OU) in AD where the RDS MSSQL computer object is created (must already exist)"
   type        = string
   default     = null
 }
 
-variable "mssql_domain_ou" {
-  description = "Organizational Unit (OU) in AD for RDS MSSQL (optional)"
+variable "conjur_domain_join_username_path" {
+  description = "Conjur secret path for the AD domain-join account username"
   type        = string
-  default     = null
+  default     = "data/vault/MH-Service-Accounts/mh-svc-domainjoiner/username"
+}
+
+variable "conjur_domain_join_password_path" {
+  description = "Conjur secret path for the AD domain-join account password"
+  type        = string
+  default     = "data/vault/MH-Service-Accounts/mh-svc-domainjoiner/password"
 }
 
 # ===========================
@@ -80,6 +105,78 @@ variable "conjur_api_key" {
   type        = string
   sensitive   = true
   default     = ""
+}
+
+# ---------------------------------------------------------------------
+# Idira Identity service user (for the idsec provider that vaults DB creds)
+# ---------------------------------------------------------------------
+variable "conjur_identity_client_id_path" {
+  description = "Conjur secret path for the Idira Identity service-user (client id / username)"
+  type        = string
+  default     = ""
+}
+
+variable "conjur_identity_client_secret_path" {
+  description = "Conjur secret path for the Idira Identity service-user (client secret / password)"
+  type        = string
+  default     = ""
+}
+
+# ---------------------------------------------------------------------
+# CyberArk vaulting of the RDS master credentials
+# ---------------------------------------------------------------------
+variable "db_safe_retention_days" {
+  description = "Version retention (days) on the database credential safes"
+  type        = number
+  default     = 7
+}
+
+variable "postgresql_safe_name" {
+  description = "Name of the safe holding the PostgreSQL master credential"
+  type        = string
+  default     = "MH-PostgreSQL"
+}
+
+variable "postgresql_platform_id" {
+  description = "Platform ID for the PostgreSQL master account (must already exist in the tenant)"
+  type        = string
+  default     = "MH-PostgreSQL"
+}
+
+variable "postgresql_safe_members" {
+  description = "Members to add to the PostgreSQL safe"
+  type = map(object({
+    member_name                = string
+    member_type                = string
+    search_in                  = optional(string)
+    membership_expiration_date = optional(number)
+    permission_set             = string
+  }))
+  default = {}
+}
+
+variable "mssql_safe_name" {
+  description = "Name of the safe holding the MSSQL master credential"
+  type        = string
+  default     = "MH-MSSQL"
+}
+
+variable "mssql_platform_id" {
+  description = "Platform ID for the MSSQL master account (must already exist in the tenant)"
+  type        = string
+  default     = "MH-MSSQL"
+}
+
+variable "mssql_safe_members" {
+  description = "Members to add to the MSSQL safe"
+  type = map(object({
+    member_name                = string
+    member_type                = string
+    search_in                  = optional(string)
+    membership_expiration_date = optional(number)
+    permission_set             = string
+  }))
+  default = {}
 }
 
 variable "conjur_aws_access_key_path" {

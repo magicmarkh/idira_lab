@@ -54,17 +54,25 @@ variable "backup_retention" {
 }
 
 variable "domain_auth_secret_arn" {
-  description = "ARN of the secret in AWS Secrets Manager for joining the MSSQL instance to local Active Directory"
+  description = "ARN of the secret in AWS Secrets Manager for joining the MSSQL instance to local Active Directory. Null = no domain join (standalone)."
   type        = string
+  default     = null
+}
+
+variable "domain_fqdn" {
+  description = "Fully-qualified AD domain name for the self-managed AD join (e.g. mh.local). Required by RDS when domain_auth_secret_arn is set."
+  type        = string
+  default     = null
 }
 
 variable "domain_dns_ips" {
-  description = "List of DNS IP addresses for the domain"
+  description = "List of DNS IP addresses for the domain (the domain controllers)"
   type        = list(string)
   default     = ["192.168.20.10", "192.168.20.10"]
 }
 
 variable "domain_ou" {
-  description = "OU where the MSSQL DB is to be joined to"
+  description = "OU where the MSSQL DB is to be joined to. Null = no domain join."
   type        = string
+  default     = null
 }

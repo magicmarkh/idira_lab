@@ -8,6 +8,16 @@ output "mssql_endpoint" {
   value       = aws_db_instance.mssql.endpoint
 }
 
+output "mssql_address" {
+  description = "Hostname of the MSSQL instance (no port)"
+  value       = aws_db_instance.mssql.address
+}
+
+output "mssql_username" {
+  description = "Master username of the MSSQL instance"
+  value       = aws_db_instance.mssql.username
+}
+
 output "mssql_port" {
   description = "RDS instance port"
   value       = aws_db_instance.mssql.port

@@ -18,8 +18,11 @@ resource "aws_db_instance" "mssql" {
   password               = random_password.mssql_admin_password.result
   db_subnet_group_name   = var.db_subnet_group_name
   vpc_security_group_ids = var.vpc_security_group_ids
+  # Self-managed AD domain join. All four are set together, or all left null
+  # (standalone SQL Server). domain_fqdn is required by RDS for self-managed AD.
   domain_auth_secret_arn = var.domain_auth_secret_arn
-  domain_dns_ips         = var.domain_dns_ips
+  domain_fqdn            = var.domain_fqdn
+  domain_dns_ips         = var.domain_auth_secret_arn != null ? var.domain_dns_ips : null
   domain_ou              = var.domain_ou
 
   publicly_accessible     = var.publicly_accessible
