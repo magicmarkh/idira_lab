@@ -19,6 +19,7 @@ module "kind_node" {
   source = "./ec2_instances/kind_node"
 
   linux_ami_id             = local.linux_ami_id
+  instance_type            = var.kind_node_instance_type
   private_subnet_id        = data.terraform_remote_state.foundation.outputs.private_subnet_id
   linux_security_group_ids = data.terraform_remote_state.foundation.outputs.ssh_internal_flat_sg_id
   key_name                 = local.key_name

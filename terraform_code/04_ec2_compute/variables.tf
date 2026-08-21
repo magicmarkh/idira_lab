@@ -131,6 +131,12 @@ variable "kind_node_hostname" {
   default     = "kind1"
 }
 
+variable "kind_node_instance_type" {
+  description = "EC2 instance type for the Kind node"
+  type        = string
+  default     = "t3a.large"
+}
+
 # ---------------------------------------------------------------------
 # CyberArk vaulting — safes, platforms, members
 # ---------------------------------------------------------------------
