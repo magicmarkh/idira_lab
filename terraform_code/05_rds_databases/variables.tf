@@ -128,7 +128,7 @@ variable "conjur_identity_client_secret_path" {
 variable "db_safe_retention_days" {
   description = "Version retention (days) on the database credential safes"
   type        = number
-  default     = 7
+  default     = 0
 }
 
 variable "mysql_safe_name" {
