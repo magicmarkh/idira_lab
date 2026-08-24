@@ -85,7 +85,7 @@ variable "state_region" {
 variable "conjur_appliance_url" {
   description = "URL of the Conjur appliance"
   type        = string
-  default     = "https://murphyslab.secretsmgr.cyberark.cloud/api"
+  default     = "https://subdomain.secretsmgr.cyberark.cloud/api"
 }
 
 variable "conjur_account" {
@@ -132,15 +132,15 @@ variable "db_safe_retention_days" {
 }
 
 variable "mysql_safe_name" {
-  description = "Name of the safe holding the MySQL master credential"
+  description = "Name of the safe holding the MySQL master credential (set in terraform.tfvars)"
   type        = string
-  default     = "MH-MySQL"
+  default     = ""
 }
 
 variable "mysql_platform_id" {
-  description = "Platform ID for the MySQL master account (must already exist in the tenant)"
+  description = "Platform ID for the MySQL master account (must already exist in the tenant; set in terraform.tfvars)"
   type        = string
-  default     = "MH-MySQL"
+  default     = ""
 }
 
 variable "mysql_safe_members" {
@@ -156,15 +156,15 @@ variable "mysql_safe_members" {
 }
 
 variable "postgresql_safe_name" {
-  description = "Name of the safe holding the PostgreSQL master credential"
+  description = "Name of the safe holding the PostgreSQL master credential (set in terraform.tfvars)"
   type        = string
-  default     = "MH-PostgreSQL"
+  default     = ""
 }
 
 variable "postgresql_platform_id" {
-  description = "Platform ID for the PostgreSQL master account (must already exist in the tenant)"
+  description = "Platform ID for the PostgreSQL master account (must already exist in the tenant; set in terraform.tfvars)"
   type        = string
-  default     = "MH-PostgreSQL"
+  default     = ""
 }
 
 variable "postgresql_safe_members" {
@@ -180,15 +180,15 @@ variable "postgresql_safe_members" {
 }
 
 variable "mssql_safe_name" {
-  description = "Name of the safe holding the MSSQL master credential"
+  description = "Name of the safe holding the MSSQL master credential (set in terraform.tfvars)"
   type        = string
-  default     = "MH-MSSQL"
+  default     = ""
 }
 
 variable "mssql_platform_id" {
-  description = "Platform ID for the MSSQL master account (must already exist in the tenant)"
+  description = "Platform ID for the MSSQL master account (must already exist in the tenant; set in terraform.tfvars)"
   type        = string
-  default     = "MH-MSSQL"
+  default     = ""
 }
 
 variable "mssql_safe_members" {
