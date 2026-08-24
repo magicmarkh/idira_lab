@@ -57,5 +57,13 @@ module "mssql" {
   domain_fqdn            = var.mssql_domain_join_enabled ? var.mssql_domain_fqdn : null
   domain_ou              = var.mssql_domain_join_enabled ? var.mssql_domain_ou : null
 
-  depends_on = [aws_secretsmanager_secret_version.mssql_domain_join]
+  # RDS validates the ARN by reading the secret AS the rds.amazonaws.com
+  # principal, which needs both the secret value AND the resource policy that
+  # grants that principal GetSecretValue. Without the policy in the dependency
+  # set, Terraform can create the DB before the policy lands and RDS fails with
+  # "domain authentication secret ARN specified must be valid".
+  depends_on = [
+    aws_secretsmanager_secret_version.mssql_domain_join,
+    aws_secretsmanager_secret_policy.mssql_domain_join,
+  ]
 }
