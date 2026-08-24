@@ -105,6 +105,39 @@ resource "aws_iam_role_policy" "secretsmanager_policy" {
   policy = data.aws_iam_policy_document.secretsmanager_access.json
 }
 
+# KMS policy: the MSSQL domain-join secret is encrypted with a dedicated
+# customer-managed key (required so RDS can be granted decrypt access). These
+# actions let Terraform create and manage that key + alias. KMS create/admin
+# actions are not resource-scopable to a key that doesn't exist yet, so
+# resources are "*".
+data "aws_iam_policy_document" "kms_access" {
+  statement {
+    actions = [
+      "kms:CreateKey",
+      "kms:CreateAlias",
+      "kms:DeleteAlias",
+      "kms:ListAliases",
+      "kms:DescribeKey",
+      "kms:GetKeyPolicy",
+      "kms:PutKeyPolicy",
+      "kms:GetKeyRotationStatus",
+      "kms:EnableKeyRotation",
+      "kms:TagResource",
+      "kms:UntagResource",
+      "kms:ListResourceTags",
+      "kms:ScheduleKeyDeletion",
+      "kms:CreateGrant",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "kms_policy" {
+  name   = "${var.ec2_tf_automation_role_name}-kms-policy"
+  role   = aws_iam_role.ec2_tf_automation_role.id
+  policy = data.aws_iam_policy_document.kms_access.json
+}
+
 # S3 bucket access policy
 data "aws_iam_policy_document" "s3_access" {
   statement {

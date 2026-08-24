@@ -11,6 +11,14 @@
 # database platforms (set them in terraform.tfvars).
 # =====================================================================
 
+module "mysql_safe" {
+  source         = "../modules/idira/safe"
+  safe_name      = var.mysql_safe_name
+  description    = "MySQL RDS master credential"
+  retention_days = var.db_safe_retention_days
+  members        = var.mysql_safe_members
+}
+
 module "postgresql_safe" {
   source         = "../modules/idira/safe"
   safe_name      = var.postgresql_safe_name
@@ -25,6 +33,28 @@ module "mssql_safe" {
   description    = "MSSQL RDS master credential"
   retention_days = var.db_safe_retention_days
   members        = var.mssql_safe_members
+}
+
+# ---------------------------------------------------------------------
+# MySQL master account
+# ---------------------------------------------------------------------
+resource "idsec_pcloud_account" "mysql_master" {
+  platform_id = var.mysql_platform_id
+  username    = module.mysql.mysql_username
+  address     = module.mysql.mysql_address
+  secret      = module.mysql.mysql_generated_password
+  safe_name   = module.mysql_safe.safe_name
+  name        = "${var.team_name}-mysql-master"
+
+  lifecycle {
+    ignore_changes = [
+      secret,
+      name,
+      address,
+      secret_type,
+      platform_account_properties,
+    ]
+  }
 }
 
 # ---------------------------------------------------------------------

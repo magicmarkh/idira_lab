@@ -131,6 +131,30 @@ variable "db_safe_retention_days" {
   default     = 7
 }
 
+variable "mysql_safe_name" {
+  description = "Name of the safe holding the MySQL master credential"
+  type        = string
+  default     = "MH-MySQL"
+}
+
+variable "mysql_platform_id" {
+  description = "Platform ID for the MySQL master account (must already exist in the tenant)"
+  type        = string
+  default     = "MH-MySQL"
+}
+
+variable "mysql_safe_members" {
+  description = "Members to add to the MySQL safe"
+  type = map(object({
+    member_name                = string
+    member_type                = string
+    search_in                  = optional(string)
+    membership_expiration_date = optional(number)
+    permission_set             = string
+  }))
+  default = {}
+}
+
 variable "postgresql_safe_name" {
   description = "Name of the safe holding the PostgreSQL master credential"
   type        = string

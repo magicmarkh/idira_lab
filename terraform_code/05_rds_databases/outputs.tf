@@ -29,6 +29,16 @@ output "mssql_generated_password" {
 # =====================================================================
 # VAULTING OUTPUTS
 # =====================================================================
+output "mysql_safe_name" {
+  description = "Safe holding the MySQL master credential"
+  value       = module.mysql_safe.safe_name
+}
+
+output "mysql_vaulted_account_name" {
+  description = "Vaulted MySQL master account name"
+  value       = idsec_pcloud_account.mysql_master.name
+}
+
 output "postgresql_safe_name" {
   description = "Safe holding the PostgreSQL master credential"
   value       = module.postgresql_safe.safe_name
