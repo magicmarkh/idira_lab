@@ -1,6 +1,10 @@
 resource "random_password" "postgresql_admin_password" {
   length  = 16
   special = true
+  # RDS rejects '/', '@', '"' and space in MasterUserPassword, and the provider
+  # default special set includes '@'. override_special is the ALLOWED pool, so
+  # list only characters RDS accepts.
+  override_special = "!#$%^&*()-_=+[]{}:?"
 }
 
 data "aws_rds_engine_version" "postgresql_latest" {

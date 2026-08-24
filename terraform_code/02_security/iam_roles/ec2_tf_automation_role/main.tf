@@ -127,6 +127,13 @@ data "aws_iam_policy_document" "kms_access" {
       "kms:ListResourceTags",
       "kms:ScheduleKeyDeletion",
       "kms:CreateGrant",
+      # Secrets Manager uses the CALLER's KMS permissions to encrypt/decrypt a
+      # secret bound to a customer-managed key. Without these, writing/reading
+      # the domain-join secret version fails with AccessDenied.
+      "kms:GenerateDataKey",
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
     ]
     resources = ["*"]
   }
