@@ -5,15 +5,18 @@
 - name: Assert required SWA agent inputs are present
   ansible.builtin.assert:
     that:
-      - swa_agent_helm_repo_url | length > 0
-      - swa_agent_chart | length > 0
-      - swa_agent_chart_version | length > 0
+      # Chart source: a control-host .tgz, OR a node-local .tgz, OR repo coords.
+      - (swa_agent_chart_src | length > 0) or
+        (swa_agent_chart_local_path | length > 0) or
+        (swa_agent_helm_repo_url | length > 0 and swa_agent_chart | length > 0 and swa_agent_chart_version | length > 0)
       - swa_agent_enrollment_token | length > 0
     fail_msg: >-
-      SWA agent inputs missing. Supply swa_agent_helm_repo_url, swa_agent_chart,
-      swa_agent_chart_version and swa_agent_enrollment_token (from your SWA
-      tenant), e.g. via `-e` extra-vars or group_vars. Set swa_agent_enabled=false
-      to skip the agent install if it is already present.
+      SWA agent inputs missing. Provide the chart via ONE of:
+      swa_agent_chart_src (path to the .tgz on the CONTROL HOST, copied to the node),
+      swa_agent_chart_local_path (path to the .tgz already ON THE NODE), or the
+      repo trio swa_agent_helm_repo_url + swa_agent_chart + swa_agent_chart_version;
+      plus swa_agent_enrollment_token (from your SWA tenant). Set
+      swa_agent_enabled=false to skip the agent install if it is already present.
   when: swa_agent_enabled | bool
 
 - name: Install SWA agent DaemonSet (Gap A)

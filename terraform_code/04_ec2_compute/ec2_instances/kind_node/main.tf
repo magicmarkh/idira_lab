@@ -98,6 +98,11 @@ resource "null_resource" "setup_swa_workloads" {
   triggers = {
     enrollment_token = sha256(var.swa_agent_enrollment_token)
     chart_version    = var.swa_agent_chart_version
+    chart_src        = var.swa_agent_chart_src
+    chart_local_path = var.swa_agent_chart_local_path
+    sm_subdomain     = var.swa_sm_subdomain
+    sm_password_var  = var.swa_sm_password_var
+    sm_username_var  = var.swa_sm_username_var
   }
 
   provisioner "local-exec" {
@@ -110,10 +115,17 @@ chmod 600 "$KEYFILE"
 ansible-playbook \
   -i '${aws_instance.kind_node.private_ip},' \
   -e 'ansible_user=ec2-user' \
+  -e 'swa_agent_chart_src=${var.swa_agent_chart_src}' \
+  -e 'swa_agent_chart_local_path=${var.swa_agent_chart_local_path}' \
   -e 'swa_agent_helm_repo_url=${var.swa_agent_helm_repo_url}' \
   -e 'swa_agent_chart=${var.swa_agent_chart}' \
   -e 'swa_agent_chart_version=${var.swa_agent_chart_version}' \
   -e 'swa_agent_enrollment_token=${var.swa_agent_enrollment_token}' \
+  -e 'swa_agent_token_set_key=${var.swa_agent_token_set_key}' \
+  -e 'swa_sm_subdomain=${var.swa_sm_subdomain}' \
+  -e 'swa_sm_jwt_service_id=${var.swa_sm_jwt_service_id}' \
+  -e 'swa_sm_password_var=${var.swa_sm_password_var}' \
+  -e 'swa_sm_username_var=${var.swa_sm_username_var}' \
   --private-key="$KEYFILE" \
   playbooks/setup_swa_workloads.yml
 

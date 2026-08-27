@@ -14,15 +14,22 @@
 #   terraform_code/_future_idira_config/secrets_manager_swa/apply_swa_policy.sh
 # =============================================================================
 
-enable_swa_workloads    = true
-swa_agent_helm_repo_url = "https://<your-swa-tenant-chart-repo>"
-swa_agent_chart         = "cyberark-swa/swa-agent"
-swa_agent_chart_version = "0.0.0" # pin an explicit chart version
+enable_swa_workloads = true
 
-# Preferred: source the enrollment token from Conjur (kept out of plaintext tfvars).
-swa_agent_enrollment_token_path = "data/vault/m-priv-svc-accts/swa/enrollment_token"
+# Chart source — TWO modes, pick one:
+#
+# (A) Local chart on the node (SWA agent chart is not public). Upload the .tgz to
+#     the kind node yourself, then point to its absolute path ON THE NODE:
+swa_agent_chart_local_path = "/home/ec2-user/charts/swa-agent.tgz"
+#
+# (B) Hosted repo (only if your chart IS reachable from a Helm repo). Leave
+#     swa_agent_chart_local_path empty and set all three:
+# swa_agent_helm_repo_url = "https://<your-swa-tenant-chart-repo>"
+# swa_agent_chart         = "cyberark-swa/swa-agent"
+# swa_agent_chart_version = "0.0.0"   # pin an explicit chart version
 
-# Alternative: pass the token directly. Only used when *_path above is empty.
-# Do NOT commit a real token — tfvars are pushed to S3 unsanitized except the
-# conjur_* fields. Prefer the _path option above.
-# swa_agent_enrollment_token = "<token-from-swa-tenant>"
+# Enrollment token. Prefer the environment over plaintext tfvars (tfvars are
+# pushed to S3 unsanitized except the conjur_* fields):
+#   export TF_VAR_swa_agent_enrollment_token='<token-from-swa-tenant>'
+# Or pass a Conjur path to have it pulled at apply time:
+# swa_agent_enrollment_token_path = "<conjur/path/to/enrollment_token>"

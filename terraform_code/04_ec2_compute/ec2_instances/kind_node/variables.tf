@@ -65,8 +65,26 @@ variable "enable_swa_workloads" {
   default     = false
 }
 
+variable "swa_agent_chart_src" {
+  description = "Absolute path ON THE CONTROL HOST (the machine running terraform) to the SWA agent chart .tgz. Ansible copies it to the node, then helm installs from the copy. Takes precedence over swa_agent_chart_local_path and repo mode. Keeps the .tgz off the node and out of the repo."
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_chart_local_path" {
+  description = "Absolute path ON THE KIND NODE to a manually-uploaded SWA agent chart .tgz. Used only when swa_agent_chart_src is empty. When set, helm installs from this file and the repo_url/chart/version below are ignored."
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_token_set_key" {
+  description = "Helm value key the chart expects for the enrollment token (helm --set <key>=<token>), e.g. 'enrollmentToken' or 'agent.enrollmentToken'."
+  type        = string
+  default     = "enrollmentToken"
+}
+
 variable "swa_agent_helm_repo_url" {
-  description = "Helm chart repository URL for the SWA agent (from your SWA tenant)"
+  description = "Helm chart repository URL for the SWA agent (repo mode only; ignored when swa_agent_chart_local_path is set)"
   type        = string
   default     = ""
 }
@@ -88,4 +106,35 @@ variable "swa_agent_enrollment_token" {
   type        = string
   default     = ""
   sensitive   = true
+}
+
+# ---------------------------------------------------------------------
+# fetch-secret demo Job — Secrets Manager tenant params
+#
+# These render into the fetch-secret Job manifest (applied later by the demo
+# scripts). They MUST match the Secrets Manager / Conjur side created by
+# _future_idira_config/secrets_manager_swa/apply_swa_policy.sh.
+# ---------------------------------------------------------------------
+variable "swa_sm_subdomain" {
+  description = "Secrets Manager tenant subdomain (e.g. 'ingen' from ingen.secretsmgr.cyberark.cloud)"
+  type        = string
+  default     = ""
+}
+
+variable "swa_sm_jwt_service_id" {
+  description = "authn-jwt service ID configured in Secrets Manager for SWA"
+  type        = string
+  default     = "secureWorkloadAccess"
+}
+
+variable "swa_sm_password_var" {
+  description = "Conjur variable path the fetch-secret Job reads (password)"
+  type        = string
+  default     = ""
+}
+
+variable "swa_sm_username_var" {
+  description = "Conjur variable path the fetch-secret Job reads (username, optional)"
+  type        = string
+  default     = ""
 }

@@ -33,4 +33,24 @@ module "kind_node" {
 
   # Vaulted EC2 key pair PEM (from Conjur) — used by the module for Ansible SSH.
   private_key_contents = data.conjur_secret.aws_pem_key.value
+
+  # SWA (Secure Workload Access) layer. Off unless enable_swa_workloads = true.
+  # The enrollment token is sourced from Conjur when a path is set, otherwise
+  # the raw var is used (see swa_agent_enrollment_token_path in variables.tf).
+  enable_swa_workloads       = var.enable_swa_workloads
+  swa_agent_chart_src        = var.swa_agent_chart_src
+  swa_agent_chart_local_path = var.swa_agent_chart_local_path
+  swa_agent_helm_repo_url    = var.swa_agent_helm_repo_url
+  swa_agent_chart            = var.swa_agent_chart
+  swa_agent_chart_version    = var.swa_agent_chart_version
+  swa_agent_token_set_key    = var.swa_agent_token_set_key
+  swa_agent_enrollment_token = var.swa_agent_enrollment_token_path != "" ? (
+    data.conjur_secret.swa_agent_enrollment_token[0].value
+  ) : var.swa_agent_enrollment_token
+
+  # fetch-secret demo Job params (must match the Secrets Manager policy side).
+  swa_sm_subdomain      = var.swa_sm_subdomain
+  swa_sm_jwt_service_id = var.swa_sm_jwt_service_id
+  swa_sm_password_var   = var.swa_sm_password_var
+  swa_sm_username_var   = var.swa_sm_username_var
 }

@@ -138,6 +138,96 @@ variable "kind_node_instance_type" {
 }
 
 # ---------------------------------------------------------------------
+# SWA (Secure Workload Access) layer on the Kind node
+#
+# After the kind cluster is up, the kind_node module can install the SWA agent
+# (Helm), build + load the swa-probe / fetch-secret images, and deploy + verify
+# the probe. All off by default — set enable_swa_workloads = true in tfvars and
+# supply the tenant chart coordinates + enrollment token to turn it on.
+# ---------------------------------------------------------------------
+variable "enable_swa_workloads" {
+  description = "Deploy the SWA agent + swa-probe/fetch-secret onto the Kind node after the cluster is up."
+  type        = bool
+  default     = false
+}
+
+variable "swa_agent_chart_src" {
+  description = "Absolute path ON THE CONTROL HOST (the machine running terraform) to the SWA agent chart .tgz. Ansible copies it to the kind node, then helm installs from the copy. Takes precedence over swa_agent_chart_local_path and repo mode. Keeps the .tgz off the node and out of the repo."
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_chart_local_path" {
+  description = "Absolute path ON THE KIND NODE to a manually-uploaded SWA agent chart .tgz. Used only when swa_agent_chart_src is empty. When set, helm installs from this file and the repo_url/chart/version below are ignored."
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_token_set_key" {
+  description = "Helm value key the chart expects for the enrollment token (helm --set <key>=<token>), e.g. 'enrollmentToken' or 'agent.enrollmentToken'."
+  type        = string
+  default     = "enrollmentToken"
+}
+
+variable "swa_agent_helm_repo_url" {
+  description = "Helm chart repository URL for the SWA agent (repo mode only; ignored when swa_agent_chart_local_path is set)"
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_chart" {
+  description = "SWA agent Helm chart reference, e.g. cyberark-swa/swa-agent"
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_chart_version" {
+  description = "Pinned SWA agent Helm chart version"
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_enrollment_token_path" {
+  description = "Conjur secret path for the SWA agent enrollment token (preferred; keeps it out of plaintext tfvars). When empty, swa_agent_enrollment_token is used."
+  type        = string
+  default     = ""
+}
+
+variable "swa_agent_enrollment_token" {
+  description = "SWA agent enrollment token, passed directly. Only used when swa_agent_enrollment_token_path is empty. Prefer the Conjur path."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+# fetch-secret demo Job — Secrets Manager tenant params. These render into the
+# fetch-secret Job manifest and MUST match the Secrets Manager / Conjur side
+# created by _future_idira_config/secrets_manager_swa/apply_swa_policy.sh.
+variable "swa_sm_subdomain" {
+  description = "Secrets Manager tenant subdomain (e.g. 'ingen' from ingen.secretsmgr.cyberark.cloud)"
+  type        = string
+  default     = ""
+}
+
+variable "swa_sm_jwt_service_id" {
+  description = "authn-jwt service ID configured in Secrets Manager for SWA"
+  type        = string
+  default     = "secureWorkloadAccess"
+}
+
+variable "swa_sm_password_var" {
+  description = "Conjur variable path the fetch-secret Job reads (password)"
+  type        = string
+  default     = ""
+}
+
+variable "swa_sm_username_var" {
+  description = "Conjur variable path the fetch-secret Job reads (username, optional)"
+  type        = string
+  default     = ""
+}
+
+# ---------------------------------------------------------------------
 # CyberArk vaulting — safes, platforms, members
 # ---------------------------------------------------------------------
 variable "win_local_admin_safe_name" {

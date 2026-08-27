@@ -3,6 +3,69 @@
 # socket appears on the node. All chart coordinates are operator-supplied; the
 # enrollment token is masked with no_log.
 
+# Determine which chart-supply mode is in effect (see defaults/main.yml):
+#   src   -> .tgz on the CONTROL HOST, copied to the node below
+#   node  -> .tgz already on the node at swa_agent_chart_local_path
+#   local -> either of the above (a real .tgz, not a repo)
+- name: Resolve chart-supply mode
+  ansible.builtin.set_fact:
+    swa_chart_mode_src: "{{ swa_agent_chart_src | length > 0 }}"
+    swa_chart_mode_node: "{{ swa_agent_chart_src | length == 0 and swa_agent_chart_local_path | length > 0 }}"
+  # 'local' = a .tgz is used (src or node), so repo add/update is skipped.
+- name: Flag local-chart mode
+  ansible.builtin.set_fact:
+    swa_chart_mode_local: "{{ swa_chart_mode_src or swa_chart_mode_node }}"
+
+# --- Mode 1: control-host .tgz -> copy to the node ---------------------------
+- name: Verify SWA agent chart file exists on the control host
+  ansible.builtin.stat:
+    path: "{{ swa_agent_chart_src }}"
+  register: swa_chart_src_stat
+  delegate_to: localhost
+  when: swa_chart_mode_src | bool
+
+- name: Fail if the control-host chart file is missing
+  ansible.builtin.fail:
+    msg: >-
+      swa_agent_chart_src is set to '{{ swa_agent_chart_src }}' but no file exists
+      there on the control host (the machine running terraform/ansible). Point it
+      at the .tgz you downloaded, or clear it to use another mode.
+  when:
+    - swa_chart_mode_src | bool
+    - not swa_chart_src_stat.stat.exists
+
+- name: Ensure chart destination dir exists on the node
+  ansible.builtin.file:
+    path: "{{ swa_agent_chart_node_dest | dirname }}"
+    state: directory
+    mode: "0755"
+  when: swa_chart_mode_src | bool
+
+- name: Copy SWA agent chart from control host to the node
+  ansible.builtin.copy:
+    src: "{{ swa_agent_chart_src }}"
+    dest: "{{ swa_agent_chart_node_dest }}"
+    mode: "0644"
+  when: swa_chart_mode_src | bool
+
+# --- Mode 2: .tgz already on the node ----------------------------------------
+- name: Verify SWA agent chart file exists on the node
+  ansible.builtin.stat:
+    path: "{{ swa_agent_chart_local_path }}"
+  register: swa_chart_stat
+  when: swa_chart_mode_node | bool
+
+- name: Fail if the node-local chart file is missing
+  ansible.builtin.fail:
+    msg: >-
+      swa_agent_chart_local_path is set to '{{ swa_agent_chart_local_path }}' but
+      no file exists there on the node. Upload the SWA agent chart .tgz to that
+      path on the kind node, or use swa_agent_chart_src (control-host path) / repo mode.
+  when:
+    - swa_chart_mode_node | bool
+    - not swa_chart_stat.stat.exists
+
+# --- Mode 3: repo (only when no local .tgz is supplied) ----------------------
 - name: Add SWA Helm repo
   ansible.builtin.command:
     argv:
@@ -16,16 +79,29 @@
   failed_when:
     - swa_repo_add.rc != 0
     - "'already exists' not in swa_repo_add.stderr"
+  when: not (swa_chart_mode_local | bool)
 
 - name: Update Helm repos
   ansible.builtin.command: helm repo update
   changed_when: false
+  when: not (swa_chart_mode_local | bool)
+
+# Chart reference and version flag differ by mode: a local .tgz already encodes
+# its version, so --version is only valid in repo mode. For mode 1 the effective
+# chart path on the node is the copied destination; for mode 2 it's the given path.
+- name: Resolve chart reference
+  ansible.builtin.set_fact:
+    swa_agent_chart_ref: >-
+      {{ swa_agent_chart_node_dest if (swa_chart_mode_src | bool)
+         else (swa_agent_chart_local_path if (swa_chart_mode_node | bool) else swa_agent_chart) }}
+    swa_agent_version_flag: >-
+      {{ '' if (swa_chart_mode_local | bool) else '--version ' ~ swa_agent_chart_version }}
 
 # helm upgrade --install is idempotent. --wait blocks until resources are ready.
 - name: Install / upgrade SWA agent DaemonSet
   ansible.builtin.command: >-
-    helm upgrade --install {{ swa_agent_release_name }} {{ swa_agent_chart }}
-    --version {{ swa_agent_chart_version }}
+    helm upgrade --install {{ swa_agent_release_name }} {{ swa_agent_chart_ref }}
+    {{ swa_agent_version_flag }}
     --namespace {{ swa_agent_namespace }} --create-namespace
     --set {{ swa_agent_token_set_key }}={{ swa_agent_enrollment_token }}
     {% for k, v in swa_agent_extra_values.items() %}--set {{ k }}={{ v }} {% endfor %}

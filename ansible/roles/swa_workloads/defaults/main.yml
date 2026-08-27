@@ -27,9 +27,20 @@ swa_k8s_dst: "/home/{{ swa_kube_user }}/swa"
 # DaemonSet name, socket path) are overridable via swa_agent_extra_values.
 swa_agent_enabled: true
 swa_agent_helm_repo_name: cyberark-swa
-swa_agent_helm_repo_url: ""       # REQUIRED - tenant Helm chart repo URL
-swa_agent_chart: ""               # REQUIRED - e.g. cyberark-swa/swa-agent
-swa_agent_chart_version: ""       # REQUIRED - pin an explicit version
+# The SWA agent chart is NOT public. Three ways to supply it, in precedence order:
+#   1. swa_agent_chart_src  - absolute path on the CONTROL HOST (the machine
+#      running terraform/ansible). The role COPIES it to the node, then installs
+#      from the copy. Use this to keep the .tgz off the node and out of the repo.
+#   2. swa_agent_chart_local_path - absolute path to a .tgz ALREADY ON THE NODE.
+#      The role installs from it in place (no copy).
+#   3. repo mode - swa_agent_helm_repo_url + swa_agent_chart + swa_agent_chart_version.
+# Modes 1 and 2 skip the Helm repo add/update entirely.
+swa_agent_chart_src: ""           # e.g. /home/you/charts/swa-agent-1.2.3.tgz (on the CONTROL HOST)
+swa_agent_chart_node_dest: "{{ swa_k8s_dst }}/swa-agent.tgz"  # where mode 1 copies it on the node
+swa_agent_chart_local_path: ""    # e.g. /home/ec2-user/charts/swa-agent-1.2.3.tgz (on the NODE)
+swa_agent_helm_repo_url: ""       # repo mode only - Helm chart repo URL
+swa_agent_chart: ""               # repo mode only - e.g. cyberark-swa/swa-agent
+swa_agent_chart_version: ""       # repo mode only - pin an explicit version
 swa_agent_release_name: swa-agent
 # The SWA agent must run in the SAME namespace as the demo workloads (swa-probe),
 # not a separate swa-system namespace, for attestation/socket sharing here.
@@ -59,8 +70,8 @@ swa_socket_dir: /tmp/swa-agent
 swa_audience: conjur
 
 # ---- fetch-secret tenant params (parameterize the previously-hardcoded YAML) -
-swa_sm_subdomain: murphyslab
+swa_sm_subdomain: ingen
 swa_sm_jwt_service_id: secureWorkloadAccess
-swa_sm_password_var: "data/vault/m-priv-svc-accts/svc_sca_api/password"
-swa_sm_username_var: "data/vault/m-priv-svc-accts/svc_sca_api/username"
+swa_sm_password_var: "data/vault/mh-priv-svc-accts/svc_sca_api/password"
+swa_sm_username_var: "data/vault/mh-priv-svc-accts/svc_sca_api/username"
 swa_wait_timeout: 30s

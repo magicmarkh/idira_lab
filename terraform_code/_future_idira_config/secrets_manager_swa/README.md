@@ -25,13 +25,13 @@ Known (in `config.sh`, override via env):
 
 | Value | Default |
 |---|---|
-| Issuer | `https://murphyslab.secretsmgr.cyberark.cloud/api/swa/trust-domains/kind.local` |
+| Issuer | `https://ingen.secretsmgr.cyberark.cloud/api/swa/trust-domains/kind.local` |
 | Service ID | `secureWorkloadAccess` |
 | SPIFFE ID (`sub`) | `spiffe://kind.local/kind-node-group/ns/swa-probe/sa/swa-probe` |
 | token-app-property | `sub` |
 | identity-path | `data/spiffe-apps` |
-| Password var | `data/vault/m-priv-svc-accts/svc_sca_api/password` |
-| Username var | `data/vault/m-priv-svc-accts/svc_sca_api/username` |
+| Password var | `data/vault/mh-priv-svc-accts/svc_sca_api/password` |
+| Username var | `data/vault/mh-priv-svc-accts/svc_sca_api/username` |
 
 **Must confirm at runtime — the JWKS URI.** The default is a best guess
 (`.../trust-domains/kind.local/.well-known/jwks.json`, sibling of the confirmed

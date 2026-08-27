@@ -31,6 +31,14 @@ data "conjur_secret" "aws_pem_key" {
   name = var.conjur_aws_pem_key_path
 }
 
+# SWA agent enrollment token (from the SWA / Secrets Manager tenant). Only
+# fetched when the SWA layer is enabled AND a Conjur path is set; when the path
+# is empty the raw var.swa_agent_enrollment_token is used instead (see kind.tf).
+data "conjur_secret" "swa_agent_enrollment_token" {
+  count = var.enable_swa_workloads && var.swa_agent_enrollment_token_path != "" ? 1 : 0
+  name  = var.swa_agent_enrollment_token_path
+}
+
 # =====================================================================
 # Remote State Data Sources
 # =====================================================================
